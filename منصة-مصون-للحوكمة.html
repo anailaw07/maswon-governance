@@ -1,0 +1,2328 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مصون | منصة حوكمة القطاع غير الربحي</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        'mg': '#303034', 'mgl': '#414142', 'mgp': '#EFDFB1',
+        'mo': '#BE9F3F', 'mol': '#EFDFB1',
+      }
+    }
+  }
+}
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Tajawal:wght@300;400;500;700;800&display=swap');
+* { font-family: 'Cairo', 'Tajawal', sans-serif; box-sizing: border-box; }
+.fade-in { animation: fadeIn 0.3s ease-in; }
+@keyframes fadeIn { from { opacity:0;transform:translateY(6px) } to { opacity:1;transform:translateY(0) } }
+.card-hover { transition:all 0.2s; }
+.card-hover:hover { transform:translateY(-2px); box-shadow:0 8px 25px rgba(190,159,63,0.18); }
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-thumb { background:#BE9F3F; border-radius:3px; }
+input[type="radio"] { accent-color: #BE9F3F; }
+textarea { resize:vertical; }
+.tab-btn { border-bottom:3px solid transparent; transition:all 0.2s; }
+.tab-btn.active { border-bottom-color:#BE9F3F; color:#303034; font-weight:700; }
+.tab-btn:not(.active) { color:#6B7280; }
+.gold-card { border-top: 4px solid #BE9F3F !important; }
+.header-divider { height:3px; background:linear-gradient(to left, #BE9F3F, #EFDFB1, #BE9F3F); }
+.rating-yes:checked ~ label { background:#D1FAE5; border-color:#10B981; }
+@media print {
+  .no-print { display:none !important; }
+  body { background:white !important; }
+  * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+}
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<!-- ════════════════════════════════════════════
+     صفحة تسجيل الدخول — Login Page
+     ════════════════════════════════════════════ -->
+<div id="login-overlay" class="fixed inset-0 z-[200] flex items-center justify-center" style="background:linear-gradient(135deg,#303034 0%,#1a1a1d 60%,#303034 100%);">
+  <div class="w-full max-w-md px-5">
+
+    <!-- شعار -->
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-4 shadow-2xl"
+           style="background:#BE9F3F;">
+        <span class="font-black text-4xl" style="color:#303034;">م</span>
+      </div>
+      <h1 class="text-2xl font-black mb-1" style="color:#BE9F3F;">منصة مصون للحوكمة</h1>
+      <p class="text-sm" style="color:#EFDFB1;opacity:0.75;">مصون محامون ومستشارون</p>
+    </div>
+
+    <!-- بطاقة الدخول -->
+    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div class="px-3 py-2 text-center text-xs font-bold" style="background:#BE9F3F;color:#303034;">
+        دليل التقييم الذاتي للقطاع غير الربحي — الإصدار 2.0
+      </div>
+      <div class="p-7 space-y-5">
+
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1.5">البريد الإلكتروني</label>
+          <input id="login-email" type="email" placeholder="example@maswon.sa" autocomplete="email"
+            onkeydown="if(event.key==='Enter')doLogin()"
+            class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none transition"
+            style="focus:border-color:#BE9F3F;">
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1.5">كلمة السر</label>
+          <div class="relative">
+            <input id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password"
+              onkeydown="if(event.key==='Enter')doLogin()"
+              class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none transition">
+            <button type="button" onclick="togglePassVis()"
+              class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm select-none"
+              id="pass-eye">👁</button>
+          </div>
+        </div>
+
+        <!-- رسالة الخطأ -->
+        <div id="login-error"
+          class="hidden bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700 font-bold text-center">
+        </div>
+
+        <button id="login-btn" onclick="doLogin()"
+          class="w-full py-3.5 rounded-xl font-black text-base transition-all shadow-lg active:scale-95"
+          style="background:#303034;color:#BE9F3F;">
+          تسجيل الدخول
+        </button>
+
+        <p class="text-center text-xs text-gray-400">
+          لا تملك حساباً؟ تواصل مع مدير النظام
+        </p>
+      </div>
+    </div>
+
+    <p class="text-center mt-5 text-xs" style="color:#EFDFB1;opacity:0.5;">
+      © 2026 مصون محامون ومستشارون — جميع الحقوق محفوظة
+    </p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     HEADER — مخفي حتى تسجيل الدخول
+     ════════════════════════════════════════════ -->
+<header id="main-header" class="no-print sticky top-0 z-40 hidden" style="background:#303034;">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:#BE9F3F;">
+        <span class="font-black text-lg" style="color:#303034;">م</span>
+      </div>
+      <div>
+        <div class="font-bold text-lg leading-tight" style="color:#BE9F3F;">منصة مصون للحوكمة والامتثال</div>
+        <div class="text-xs" style="color:#EFDFB1; opacity:0.8;">الإصدار 2.0 — دليل التقييم الذاتي للقطاع غير الربحي</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <span id="hbc" class="text-xs hidden md:block max-w-xs truncate" style="color:#EFDFB1;"></span>
+      <button onclick="goHome()" id="home-btn" class="hidden px-3 py-1.5 rounded-lg text-sm font-bold transition" style="background:#BE9F3F; color:#303034;">
+        ← لوحة التحكم
+      </button>
+      <!-- معلومات المستخدم -->
+      <div id="user-pill" class="hidden items-center gap-2 px-3 py-1.5 rounded-lg" style="background:rgba(190,159,63,0.15);">
+        <span class="text-xs" style="color:#EFDFB1;">👤</span>
+        <span id="user-email-display" class="text-xs font-bold truncate max-w-[130px]" style="color:#EFDFB1;"></span>
+        <span id="session-countdown" class="text-xs hidden" style="color:#BE9F3F;"></span>
+      </div>
+      <button onclick="renderAdminPage()" id="admin-btn"
+        class="hidden px-3 py-1.5 rounded-lg text-xs font-bold transition hover:opacity-90"
+        style="background:rgba(190,159,63,0.2);color:#BE9F3F;border:1px solid #BE9F3F;">
+        ⚙️ المستخدمون
+      </button>
+      <button onclick="doLogout()" id="logout-btn" class="hidden px-3 py-1.5 rounded-lg text-xs font-bold transition hover:opacity-80" style="background:#BE9F3F;color:#303034;">
+        خروج
+      </button>
+    </div>
+  </div>
+  <div class="header-divider"></div>
+</header>
+
+<div id="app" class="max-w-7xl mx-auto px-4 py-6"></div>
+
+<!-- FOOTER -->
+<footer id="main-footer" class="no-print mt-10 hidden" style="background:#303034;">
+  <div class="header-divider"></div>
+  <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+    <div class="text-xs" style="color:#EFDFB1; opacity:0.8;">منصة مصون للحوكمة والامتثال — جميع الحقوق محفوظة © 2026</div>
+    <div class="text-xs" style="color:#BE9F3F;">مصون محامون ومستشارون</div>
+  </div>
+</footer>
+
+<!-- ADD MODAL -->
+<div id="add-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg fade-in">
+    <div class="rounded-t-2xl p-5" style="background:#303034;">
+      <h3 class="font-bold text-xl" style="color:#BE9F3F;">إضافة جمعية جديدة</h3>
+      <p class="text-sm mt-1" style="color:#EFDFB1;opacity:0.8;">أدخل بيانات الجمعية لتحديد تصنيفها تلقائياً</p>
+    </div>
+    <div class="p-5 space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="md:col-span-2">
+          <label class="block text-sm font-bold text-gray-700 mb-1">اسم الجمعية <span class="text-red-500">*</span></label>
+          <input id="inp-name" type="text" placeholder="مثال: جمعية البر الخيرية"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-mo text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">رقم الترخيص</label>
+          <input id="inp-reg" type="text" placeholder="ج-1234"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-mo text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">القطاع</label>
+          <select id="inp-sector" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-mo text-sm">
+            <option value="">اختر القطاع</option>
+            <option>البر والعمل الاجتماعي</option>
+            <option>التعليم والبحث</option>
+            <option>الصحة والرعاية</option>
+            <option>البيئة والتنمية</option>
+            <option>الثقافة والفنون</option>
+            <option>الشباب والرياضة</option>
+            <option>التنمية الاقتصادية</option>
+            <option>أخرى</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">إيرادات العام المالي السابق (ريال) <span class="text-red-500">*</span></label>
+          <input id="inp-revenue" type="number" min="0" placeholder="0"
+            oninput="previewClassification(this.value)"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-mo text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">التصنيف التلقائي</label>
+          <div id="cls-preview" class="border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-sm text-gray-400 min-h-[38px] flex items-center">
+            أدخل الإيرادات لرؤية التصنيف
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">الموقع الجغرافي</label>
+          <select id="inp-location-city" onchange="onModalLocChange()" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-mo text-sm">
+            <optgroup label="── التصنيف (أ) - مقر إمارة / مدينة كبيرة ──">
+              <option value="الرياض" selected>الرياض</option>
+              <option value="مكة المكرمة">مكة المكرمة</option>
+              <option value="المدينة المنورة">المدينة المنورة</option>
+              <option value="الدمام">الدمام</option>
+              <option value="الخبر">الخبر</option>
+              <option value="الظهران">الظهران</option>
+              <option value="جدة">جدة</option>
+              <option value="بريدة">بريدة</option>
+              <option value="أبها">أبها</option>
+              <option value="جازان">جازان</option>
+              <option value="حائل">حائل</option>
+              <option value="تبوك">تبوك</option>
+              <option value="نجران">نجران</option>
+              <option value="سكاكا">سكاكا</option>
+              <option value="الباحة">الباحة</option>
+              <option value="عرعر">عرعر</option>
+              <option value="الطائف">الطائف</option>
+              <option value="ظهر الباطن">ظهر الباطن</option>
+              <option value="الأحساء">الأحساء</option>
+              <option value="الدرعية">الدرعية</option>
+              <option value="العلا">العلا</option>
+            </optgroup>
+            <optgroup label="── التصنيف (ب) - محافظة أ ──">
+              <option value="الخرج">الخرج</option>
+              <option value="الزلفي">الزلفي</option>
+              <option value="وادي الدواسر">وادي الدواسر</option>
+              <option value="عنيزة">عنيزة</option>
+              <option value="الدوادمي">الدوادمي</option>
+              <option value="الجمعة">الجمعة</option>
+              <option value="شقراء">شقراء</option>
+              <option value="خميس مشيط">خميس مشيط</option>
+              <option value="البكيرية">البكيرية</option>
+              <option value="القويعية">القويعية</option>
+              <option value="عفيف">عفيف</option>
+              <option value="ينبع">ينبع</option>
+              <option value="الجبيل">الجبيل</option>
+              <option value="الخفجي">الخفجي</option>
+              <option value="بيشة">بيشة</option>
+              <option value="الرس">الرس</option>
+              <option value="محايل عسير">محايل عسير</option>
+              <option value="ظهران الجنوب">ظهران الجنوب</option>
+              <option value="النماص">النماص</option>
+              <option value="تيماء">تيماء</option>
+              <option value="قيفاء">قيفاء</option>
+              <option value="صبيا">صبيا</option>
+              <option value="القريات">القريات</option>
+              <option value="بلجرشي">بلجرشي</option>
+            </optgroup>
+            <optgroup label="── التصنيف (ج) - محافظة ب / مركز ──">
+              <option value="__custom__">أخرى — أدخل الاسم يدوياً</option>
+            </optgroup>
+          </select>
+          <input id="inp-location-custom" type="text" placeholder="اكتب اسم المحافظة أو المركز"
+            class="hidden w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-mo text-sm mt-1">
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">المحامي المسؤول</label>
+          <input id="inp-lawyer" type="text" placeholder="اسم المحامي"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-mo text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">سنة التقييم</label>
+          <input id="inp-year" type="text" value="2025"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-mo text-sm">
+        </div>
+      </div>
+      <!-- Alert -->
+      <div class="bg-amber-50 border border-amber-300 rounded-xl p-3 text-sm text-amber-800">
+        <strong>⚠️ تنبيه:</strong> لا يمكن البدء في التقييم الذاتي ما لم تعتمد الجمعية قوائمها المالية للعام 2025 من مراجع خارجي مستقل.
+      </div>
+      <div class="flex gap-3">
+        <button onclick="addAssoc()" class="flex-1 py-2.5 rounded-xl font-bold transition" style="background:#BE9F3F;color:#fff;">إضافة الجمعية</button>
+        <button onclick="closeModal()" class="flex-1 border border-gray-300 text-gray-600 py-2.5 rounded-xl hover:bg-gray-50 transition">إلغاء</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE MODAL -->
+<div id="del-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center fade-in">
+    <div class="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
+    <h3 class="font-bold text-gray-800 text-lg mb-2">حذف الجمعية</h3>
+    <p class="text-gray-500 text-sm mb-5">هل أنت متأكد؟ لا يمكن التراجع عن هذا الإجراء.</p>
+    <div class="flex gap-3">
+      <button onclick="confirmDel()" class="flex-1 bg-red-600 text-white py-2.5 rounded-xl font-bold hover:bg-red-700">نعم، احذف</button>
+      <button onclick="document.getElementById('del-modal').classList.add('hidden')" class="flex-1 border border-gray-300 text-gray-600 py-2.5 rounded-xl hover:bg-gray-50">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- USER MODAL — إضافة / تعديل مستخدم -->
+<div id="um-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md fade-in">
+    <div class="rounded-t-2xl p-5" style="background:#303034;">
+      <h3 id="um-modal-title" class="font-bold text-xl" style="color:#BE9F3F;">إضافة مستخدم جديد</h3>
+      <p class="text-xs mt-1" style="color:#EFDFB1;opacity:0.8;">منصة مصون للحوكمة والامتثال</p>
+    </div>
+    <div class="p-5 space-y-4">
+      <div class="grid grid-cols-1 gap-4">
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">الاسم الكامل <span class="text-red-500">*</span></label>
+          <input id="um-name" type="text" placeholder="مثال: أحمد العمري"
+            onkeydown="if(event.key==='Enter')saveUserModal()"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:border-mo text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">البريد الإلكتروني <span class="text-red-500">*</span></label>
+          <input id="um-email" type="email" placeholder="user@maswon.sa"
+            onkeydown="if(event.key==='Enter')saveUserModal()"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:border-mo text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">الصلاحية <span class="text-red-500">*</span></label>
+          <select id="um-role" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:border-mo text-sm">
+            <option value="lawyer">⚖️ محامٍ — قراءة وتعديل الجمعيات فقط</option>
+            <option value="admin">👑 مدير — وصول كامل مع إدارة المستخدمين</option>
+          </select>
+        </div>
+        <div id="um-pass-row">
+          <label id="um-pass-label" class="block text-sm font-bold text-gray-700 mb-1">كلمة السر <span class="text-red-500">*</span></label>
+          <input id="um-pass" type="password" placeholder="8 أحرف على الأقل"
+            onkeydown="if(event.key==='Enter')saveUserModal()"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:border-mo text-sm">
+        </div>
+      </div>
+      <div id="um-error" class="hidden bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700 font-bold"></div>
+      <div class="flex gap-3 pt-1">
+        <button id="um-save-btn" onclick="saveUserModal()"
+          class="flex-1 py-2.5 rounded-xl font-bold transition" style="background:#BE9F3F;color:#fff;">
+          إضافة المستخدم
+        </button>
+        <button onclick="closeUserModal()"
+          class="flex-1 border border-gray-300 text-gray-600 py-2.5 rounded-xl hover:bg-gray-50 transition">
+          إلغاء
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- USER DELETE MODAL — تأكيد حذف المستخدم -->
+<div id="ud-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center fade-in">
+    <div class="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">👤</div>
+    <h3 class="font-bold text-gray-800 text-lg mb-2">حذف المستخدم</h3>
+    <p class="text-gray-500 text-sm mb-1">هل أنت متأكد من حذف المستخدم</p>
+    <p id="ud-name" class="font-black text-gray-800 mb-4">—</p>
+    <p class="text-red-500 text-xs mb-5">⚠️ لا يمكن التراجع عن هذا الإجراء</p>
+    <div class="flex gap-3">
+      <button onclick="doDeleteUser()" class="flex-1 bg-red-600 text-white py-2.5 rounded-xl font-bold hover:bg-red-700">نعم، احذف</button>
+      <button onclick="document.getElementById('ud-modal').classList.add('hidden')" class="flex-1 border border-gray-300 text-gray-600 py-2.5 rounded-xl hover:bg-gray-50">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- FILE DELETE MODAL -->
+<div id="file-del-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center fade-in">
+    <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl" style="background:#EFDFB1;">🗑️</div>
+    <h3 class="font-bold text-gray-800 text-lg mb-2">حذف الملف</h3>
+    <p class="text-gray-500 text-sm mb-5">هل تريد حذف هذا الملف؟ لا يمكن التراجع عن هذا الإجراء.</p>
+    <div class="flex gap-3">
+      <button onclick="doFileDelete()" class="flex-1 bg-red-600 text-white py-2.5 rounded-xl font-bold hover:bg-red-700">نعم، احذف</button>
+      <button onclick="document.getElementById('file-del-modal').classList.add('hidden')" class="flex-1 border border-gray-300 text-gray-600 py-2.5 rounded-xl hover:bg-gray-50">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  CLASSIFICATION
+// ══════════════════════════════════════════════
+const CLS = {
+  nano:   { label:'متناهية الصغر', range:'حتى 500,000 ريال',               badge:'bg-purple-100 text-purple-800 border-purple-300',  dot:'bg-purple-500' },
+  small:  { label:'صغيرة',         range:'500,001 - 2,000,000 ريال',        badge:'bg-blue-100 text-blue-800 border-blue-300',        dot:'bg-blue-500'   },
+  medium: { label:'متوسطة',        range:'2,000,001 - 8,000,000 ريال',      badge:'bg-amber-100 text-amber-800 border-amber-300',     dot:'bg-amber-500'  },
+  large:  { label:'كبيرة',         range:'8,000,001 - 30,000,000 ريال',     badge:'bg-green-100 text-green-800 border-green-300',     dot:'bg-green-500'  },
+  xlarge: { label:'متناهية الكبر', range:'أكثر من 30,000,000 ريال',         badge:'bg-red-100 text-red-800 border-red-300',           dot:'bg-red-500'    },
+};
+function classify(revenue) {
+  const r = Number(revenue) || 0;
+  if (r <= 500000)    return 'nano';
+  if (r <= 2000000)   return 'small';
+  if (r <= 8000000)   return 'medium';
+  if (r <= 30000000)  return 'large';
+  return 'xlarge';
+}
+function previewClassification(v) {
+  const el = document.getElementById('cls-preview');
+  if (!v || Number(v) <= 0) { el.innerHTML = '<span class="text-gray-400">أدخل الإيرادات لرؤية التصنيف</span>'; return; }
+  const c = classify(v);
+  el.innerHTML = `<span class="px-2 py-0.5 rounded-full border text-xs font-bold ${CLS[c].badge}">${CLS[c].label}</span>
+    <span class="text-gray-400 text-xs mr-2">${CLS[c].range}</span>`;
+}
+
+// ══════════════════════════════════════════════
+//  INDICATOR MAPPING PER CLASSIFICATION
+// ══════════════════════════════════════════════
+const COMP_BY_CLS = {
+  nano:   ['c_laiha','c_jecm','c_majlis','c_foroo','c_taqarir','c_baramij','c_wathaeq','c_lijan'],
+  small:  ['c_laiha','c_jecm','c_majlis','c_foroo','c_taqarir','c_baramij','c_wathaeq','c_lijan'],
+  medium: ['c_laiha','c_jecm','c_majlis','c_foroo','c_taqarir','c_baramij','c_wathaeq','c_lijan','c_anzhima'],
+  large:  ['c_laiha','c_jecm','c_majlis','c_foroo','c_taqarir','c_baramij','c_wathaeq','c_lijan','c_anzhima','c_anshita','c_eedarat'],
+  xlarge: ['c_laiha','c_jecm','c_majlis','c_foroo','c_taqarir','c_baramij','c_wathaeq','c_lijan','c_anzhima','c_anshita','c_eedarat'],
+};
+const TRANS_BY_CLS = {
+  nano:   ['t_lawaeh','t_qaimoon','t_qawaem','t_efsah'],
+  small:  ['t_lawaeh','t_byanat','t_qawaem','t_efsah'],
+  medium: ['t_lawaeh','t_byanat','t_qaimoon','t_qawaem','t_efsah'],
+  large:  ['t_lawaeh','t_qaimoon','t_byanat','t_ahdaf','t_qawaem','t_efsah'],
+  xlarge: ['t_lawaeh','t_qaimoon','t_byanat','t_ahdaf','t_qawaem','t_efsah'],
+};
+const FIN_INDS = ['f_haykal','f_siyasat','f_sajilat','f_taqarir','f_ejraat'];
+function getIndicators(assoc) {
+  const c = assoc.classification || 'small';
+  return {
+    compliance:   COMP_BY_CLS[c]  || COMP_BY_CLS.small,
+    transparency: TRANS_BY_CLS[c] || TRANS_BY_CLS.small,
+    financial:    FIN_INDS,
+  };
+}
+
+// ══════════════════════════════════════════════
+//  ASSESSMENT DATA — ALL INDICATORS & PRACTICES
+// ══════════════════════════════════════════════
+const IND = {
+  // ─── COMPLIANCE ───
+  c_laiha: {
+    name: 'اللائحة الأساسية للجمعية', criteria: 'compliance',
+    practices: [
+      { id:'p1', text:'تمتلك الجمعية لائحة أساسية سارية المفعول معتمدة من الجهة الرقابية المختصة', w:3 },
+      { id:'p2', text:'تتضمن اللائحة أهداف الجمعية ونطاق عملها الجغرافي', w:2 },
+      { id:'p3', text:'تحدد اللائحة شروط العضوية وحقوق الأعضاء وواجباتهم', w:2 },
+      { id:'p4', text:'تتضمن اللائحة آليات التصويت واتخاذ القرار', w:2 },
+      { id:'p5', text:'وُضعت آلية واضحة لتعديل اللائحة ومراجعتها دورياً', w:1 },
+    ]
+  },
+  c_jecm: {
+    name: 'الجمعية العمومية', criteria: 'compliance',
+    practices: [
+      { id:'p1', text:'عقدت الجمعية اجتماعاً عاماً عادياً خلال العام المالي المنصرم', w:3 },
+      { id:'p2', text:'وُجِّهت الدعوة للاجتماع في المدد المحددة نظاماً', w:2 },
+      { id:'p3', text:'اكتمل النصاب القانوني في اجتماعات الجمعية العمومية', w:2 },
+      { id:'p4', text:'وُثِّقت قرارات الجمعية العمومية في محاضر رسمية موقعة', w:2 },
+      { id:'p5', text:'صُودق على الميزانية والتقرير السنوي في الاجتماع العام', w:1 },
+    ]
+  },
+  c_majlis: {
+    name: 'مجلس الإدارة', criteria: 'compliance',
+    practices: [
+      { id:'p1', text:'صدر قرار رسمي معتمد بتشكيل مجلس الإدارة الحالي', w:2 },
+      { id:'p2', text:'عقد المجلس اجتماعاته الدورية المقررة وفق اللائحة', w:2 },
+      { id:'p3', text:'وُثِّقت محاضر اجتماعات المجلس وحُفظت بصورة منتظمة', w:2 },
+      { id:'p4', text:'أفصح أعضاء المجلس كتابياً عن أي تعارض في المصالح', w:2 },
+      { id:'p5', text:'طُبِّقت آلية واضحة للتصويت واتخاذ القرار في المجلس', w:2 },
+    ]
+  },
+  c_foroo: {
+    name: 'الفروع والمكاتب', criteria: 'compliance',
+    applicabilityToggle: true,
+    practices: [
+      { id:'p1', text:'صدر قرار معتمد من الجهة الرقابية بفتح الفروع', w:2 },
+      { id:'p2', text:'تمتلك الفروع لوائح تشغيلية واضحة تحدد صلاحياتها', w:2 },
+      { id:'p3', text:'ترفع الفروع تقارير دورية منتظمة لمجلس الإدارة', w:1 },
+    ]
+  },
+  c_taqarir: {
+    name: 'التقارير', criteria: 'compliance',
+    practices: [
+      { id:'p1', text:'أعدت الجمعية تقريراً سنوياً للأنشطة وقدمته في موعده النظامي', w:3 },
+      { id:'p2', text:'أعدت الجمعية تقريراً مالياً سنوياً مدققاً من مراجع خارجي', w:3 },
+      { id:'p3', text:'وافق مجلس الإدارة على التقارير قبل رفعها للجهة الرقابية', w:2 },
+      { id:'p4', text:'رُفعت التقارير للجهة الرقابية في المواعيد النظامية', w:2 },
+    ]
+  },
+  c_baramij: {
+    name: 'البرامج والأنشطة', criteria: 'compliance',
+    practices: [
+      { id:'p1', text:'اعتمد مجلس الإدارة خطة برامجية وأنشطة سنوية', w:2 },
+      { id:'p2', text:'حصلت الجمعية على التصاريح اللازمة لتنفيذ أنشطتها', w:2 },
+      { id:'p3', text:'وُثِّقت نتائج الأنشطة وأعداد المستفيدين بشكل دوري', w:2 },
+    ]
+  },
+  c_wathaeq: {
+    name: 'الوثائق والسجلات', criteria: 'compliance',
+    practices: [
+      { id:'p1', text:'تمتلك الجمعية سجلاً محدثاً بجميع أعضائها', w:2 },
+      { id:'p2', text:'تُؤرشف المراسلات الرسمية للجمعية بصورة منتظمة', w:2 },
+      { id:'p3', text:'تمتلك الجمعية نظام حفظ وثائق إلكتروني مع نسخ احتياطية', w:2 },
+      { id:'p4', text:'مطبقة سياسة واضحة لفترات الاحتفاظ بالوثائق', w:1 },
+    ]
+  },
+  c_lijan: {
+    name: 'تكوين اللجان', criteria: 'compliance',
+    practices: [
+      { id:'p1', text:'صدرت قرارات رسمية بتشكيل اللجان الفرعية (مالية، رقابة، تنفيذية)', w:2 },
+      { id:'p2', text:'وُضِّحت اختصاصات وصلاحيات كل لجنة في وثيقة رسمية', w:2 },
+      { id:'p3', text:'عقدت اللجان اجتماعاتها الدورية ووُثِّقت محاضرها', w:2 },
+      { id:'p4', text:'رفعت اللجان تقاريرها ونتائجها لمجلس الإدارة بانتظام', w:2 },
+    ]
+  },
+  c_anzhima: {
+    name: 'الأنظمة السارية — غسل الأموال وتمويل الإرهاب', criteria: 'compliance',
+    practices: [
+      { id:'p1', text:'تمتلك الجمعية سياسة مكتوبة لمكافحة غسل الأموال وتمويل الإرهاب', w:3 },
+      { id:'p2', text:'تطبق الجمعية إجراءات التحقق من هوية المانحين والمتبرعين (KYC)', w:3 },
+      { id:'p3', text:'تلقى الموظفون المعنيون تدريباً على إجراءات مكافحة غسل الأموال', w:2 },
+      { id:'p4', text:'وُثِّقت حالات الاشتباه ورُفعت للجهات المختصة عند الاقتضاء', w:2 },
+    ]
+  },
+  c_anshita: {
+    name: 'الأنشطة والفعاليات', criteria: 'compliance',
+    practices: [
+      { id:'p1', text:'تمتلك الجمعية خطة تشغيلية سنوية تفصيلية للأنشطة والفعاليات', w:2 },
+      { id:'p2', text:'تحصل الجمعية على التصاريح المطلوبة من الجهات المختصة لكل فعالية', w:2 },
+      { id:'p3', text:'توثق الجمعية نتائج فعالياتها وأعداد المستفيدين بشكل منتظم', w:2 },
+      { id:'p4', text:'تقيّم الجمعية أثر أنشطتها وتُعدّ تقارير قياس الأثر', w:2 },
+    ]
+  },
+  c_eedarat: {
+    name: 'الإيرادات والمصروفات والتملك', criteria: 'compliance',
+    practices: [
+      { id:'p1', text:'تُعتمد الميزانية السنوية من مجلس الإدارة قبل بدء العام المالي', w:2 },
+      { id:'p2', text:'تمتلك الجمعية سياسة مشتريات مكتوبة ومعتمدة ومطبقة', w:2 },
+      { id:'p3', text:'يُسجَّل التملك والأصول الثابتة في سجل رسمي ومحدَّث', w:2 },
+      { id:'p4', text:'تُراجع كشوف الحسابات البنكية شهرياً وتُسوى مع الدفاتر', w:2 },
+    ]
+  },
+  // ─── TRANSPARENCY ───
+  t_lawaeh: {
+    name: 'اللوائح والأنظمة', criteria: 'transparency',
+    practices: [
+      { id:'p1', text:'أتاحت الجمعية لائحتها الأساسية للأعضاء والجمهور', w:2 },
+      { id:'p2', text:'تمتلك الجمعية لائحة سلوك وظيفي مكتوبة ومعتمدة', w:2 },
+      { id:'p3', text:'أتاحت الجمعية سياسة تعارض المصالح للأعضاء والموظفين', w:2 },
+    ]
+  },
+  t_qaimoon: {
+    name: 'بيانات القائمين على الجمعية', criteria: 'transparency',
+    practices: [
+      { id:'p1', text:'أُعلنت بيانات أعضاء مجلس الإدارة (الاسم والمؤهل والدور)', w:2 },
+      { id:'p2', text:'أُتيحت السيرة الذاتية للمدير التنفيذي للمعنيين', w:2 },
+      { id:'p3', text:'وُضِّحت بيانات التواصل مع الإدارة التنفيذية', w:2 },
+    ]
+  },
+  t_byanat: {
+    name: 'بيانات الجمعية', criteria: 'transparency',
+    practices: [
+      { id:'p1', text:'شهادة التسجيل الرسمية سارية المفعول', w:2 },
+      { id:'p2', text:'مُعلنة بيانات التواصل المؤسسي للجمعية بوضوح', w:2 },
+      { id:'p3', text:'العنوان الوطني مسجَّل في البريد السعودي ومحدَّث', w:1 },
+    ]
+  },
+  t_ahdaf: {
+    name: 'أهداف وبرامج الجمعية', criteria: 'transparency',
+    practices: [
+      { id:'p1', text:'وُثِّقت رؤية ورسالة وأهداف الجمعية الاستراتيجية', w:2 },
+      { id:'p2', text:'نُشرت قائمة البرامج والخدمات المقدمة للمستفيدين', w:2 },
+      { id:'p3', text:'أصدرت الجمعية تقريراً عن أثرها المجتمعي وأعداد المستفيدين', w:1 },
+    ]
+  },
+  t_qawaem: {
+    name: 'القوائم المالية', criteria: 'transparency',
+    practices: [
+      { id:'p1', text:'أعدت الجمعية ميزانية عمومية سنوية', w:2 },
+      { id:'p2', text:'أعدت الجمعية قائمة إيرادات ومصروفات سنوية', w:2 },
+      { id:'p3', text:'راجع مراجع حسابات خارجي مستقل القوائم المالية', w:2 },
+      { id:'p4', text:'أفصحت الجمعية عن مصادر تمويلها الرئيسية', w:2 },
+    ]
+  },
+  t_efsah: {
+    name: 'نموذج الإفصاح', criteria: 'transparency',
+    practices: [
+      { id:'p1', text:'تمتلك الجمعية نموذج الإفصاح الموحد المعتمد من المركز الوطني', w:2 },
+      { id:'p2', text:'وقّع جميع أعضاء مجلس الإدارة على نموذج الإفصاح', w:2 },
+      { id:'p3', text:'يُحدَّث نموذج الإفصاح سنوياً أو عند تغيير الأعضاء', w:2 },
+    ]
+  },
+  // ─── FINANCIAL ───
+  f_haykal: {
+    name: 'الهيكل التنظيمي', criteria: 'financial',
+    practices: [
+      { id:'p1', text:'اعتمد مجلس الإدارة الهيكل التنظيمي للجمعية', w:2 },
+      { id:'p2', text:'تُوضِّح وثيقة رسمية تفويضات الصلاحيات المالية', w:2 },
+      { id:'p3', text:'مُحدَّدة مسؤوليات كل منصب في الهيكل التنظيمي المالي', w:2 },
+    ]
+  },
+  f_siyasat: {
+    name: 'تفعيل السياسات والإجراءات', criteria: 'financial',
+    practices: [
+      { id:'p1', text:'سياسة المشتريات والتعاقدات معتمدة ومطبقة فعلياً', w:2 },
+      { id:'p2', text:'تطبق الجمعية إجراءات موافقة واضحة على المصروفات وفق حدود الصلاحيات', w:2 },
+      { id:'p3', text:'سياسة إدارة النقدية والحسابات البنكية معتمدة ومطبقة', w:2 },
+      { id:'p4', text:'سياسة تعارض المصالح المالية معتمدة ومطبقة', w:2 },
+    ]
+  },
+  f_sajilat: {
+    name: 'السجلات والمستندات', criteria: 'financial',
+    practices: [
+      { id:'p1', text:'تمسك الجمعية دفاتر حسابات محاسبية منتظمة (يدوية أو إلكترونية)', w:2 },
+      { id:'p2', text:'جميع فواتير وإيصالات المصروفات محفوظة ومؤرشفة', w:2 },
+      { id:'p3', text:'عقود الموردين والمزودين الخدميين موثقة وبحفظ منتظم', w:2 },
+      { id:'p4', text:'يوجد سجل للأصول الثابتة يتضمن قيمتها وإهلاكها', w:2 },
+    ]
+  },
+  f_taqarir: {
+    name: 'التقارير المالية', criteria: 'financial',
+    practices: [
+      { id:'p1', text:'تُقدَّم تقارير مالية دورية (شهرية أو ربعية) لمجلس الإدارة', w:2 },
+      { id:'p2', text:'أجرى مراجع حسابات خارجي مراجعة مستقلة للحسابات السنوية', w:3 },
+      { id:'p3', text:'يُعدَّ جدول مقارنة بين الميزانية التقديرية والفعلية', w:2 },
+      { id:'p4', text:'وُزِّع تقرير المراجع الخارجي على أعضاء مجلس الإدارة ونوقش', w:1 },
+    ]
+  },
+  f_ejraat: {
+    name: 'الإجراءات المالية والمحاسبية', criteria: 'financial',
+    practices: [
+      { id:'p1', text:'مطبق مبدأ الفصل بين المهام (من يُصرِّف يختلف عمن يُسجِّل)', w:3 },
+      { id:'p2', text:'تُجرى تسويات بنكية شهرية موثقة', w:2 },
+      { id:'p3', text:'موضحة إجراءات إغلاق الحسابات في نهاية السنة المالية', w:2 },
+      { id:'p4', text:'يوجد نظام رقابة داخلية موثق على العمليات المالية', w:1 },
+    ]
+  },
+};
+
+const CRITERIA_META = {
+  compliance:   { label:'الامتثال والالتزام',   icon:'📋', color:'blue'  },
+  transparency: { label:'الشفافية والإفصاح',    icon:'🔍', color:'amber' },
+  financial:    { label:'السلامة المالية',       icon:'💰', color:'green' },
+};
+
+// ══════════════════════════════════════════════
+//  SUPABASE + CACHE LAYER
+// ══════════════════════════════════════════════
+const { createClient } = window.supabase;
+const SUPA = createClient(
+  'https://awfvzrbfukescnfvxqlr.supabase.co',
+  'sb_publishable_uJZAWNhotuE5dKvAlK8H5g_j57hCARh'
+);
+// bcryptjs@2.4.3 عبر CDN يعرّف window.dcodeIO.bcrypt وليس window.bcrypt
+const bcrypt = window.dcodeIO?.bcrypt ?? window.bcrypt;
+let CACHE = { associations: [] };
+
+function load() { return JSON.parse(JSON.stringify(CACHE)); }
+
+// save() يحدّث الذاكرة فقط — كل دالة تزامن مباشرةً الصفّ الذي تغيّر
+function save(d) { CACHE = JSON.parse(JSON.stringify(d)); }
+
+// ── تحويل كائن الجمعية إلى صف Supabase ──
+function _assocRow(a) {
+  return {
+    id: a.id, name: a.name, reg: a.reg || null, sector: a.sector || null,
+    revenue: a.revenue || 0, classification: a.classification,
+    location: a.location || 'إمارة', location_city: a.locationCity || null,
+    lawyer: a.lawyer || null, year: a.year || '2025', status: a.status || 'preparing',
+    member_count:   a.memberCount   || null,
+    bachelor_count: a.bachelorCount || null,
+    kinship_forms:  a.kinshipForms  || null,
+    reserve_fund:   a.reserveFund   || {},
+    updated_at:     new Date().toISOString(),
+    updated_by:     currentUser?.id || null
+  };
+}
+
+// ── مزامنة جمعية واحدة ──
+async function _supaUpsertAssoc(assocId) {
+  const a = CACHE.associations.find(x => x.id === assocId);
+  if (!a) return;
+  const { error } = await SUPA.from('associations').upsert(_assocRow(a));
+  if (error) { console.warn('[assoc upsert]', error); _showSyncErr(); }
+}
+
+// ── مزامنة إجابة ممارسة واحدة ──
+async function _supaUpsertAnswer(assocId, standard, indicator, practiceId, score) {
+  const { error } = await SUPA.from('assessments').upsert(
+    { association_id: assocId, standard, indicator,
+      practice_id: practiceId, score, notes: null,
+      updated_at: new Date().toISOString() },
+    { onConflict: 'association_id,standard,indicator,practice_id' }
+  );
+  if (error) { console.warn('[answer upsert]', error); _showSyncErr(); }
+}
+
+// ── مزامنة ملاحظة قانونية ──
+async function _supaUpsertNote(assocId, lnKey, notes) {
+  const sep = lnKey.indexOf('_');
+  const standard  = lnKey.substring(0, sep);
+  const indicator = lnKey.substring(sep + 1);
+  const { error } = await SUPA.from('assessments').upsert(
+    { association_id: assocId, standard, indicator,
+      practice_id: '__notes__', score: null, notes,
+      updated_at: new Date().toISOString() },
+    { onConflict: 'association_id,standard,indicator,practice_id' }
+  );
+  if (error) { console.warn('[note upsert]', error); _showSyncErr(); }
+}
+
+function _showSyncErr() {
+  const b = document.createElement('div');
+  b.className = 'no-print fixed bottom-4 left-4 rounded-xl text-sm font-bold shadow-lg z-50 px-4 py-2 text-white';
+  b.style.background = '#EF4444';
+  b.textContent = '⚠️ تعذّر حفظ التغيير في Supabase';
+  document.body.appendChild(b); setTimeout(() => b.remove(), 4000);
+}
+
+async function _loadFromSupa() {
+  const [{ data: assocData, error: ae }, { data: asmtData }, { data: docData }] =
+    await Promise.all([
+      SUPA.from('associations').select('*').order('created_at'),
+      SUPA.from('assessments').select('*'),
+      SUPA.from('documents').select('*')
+    ]);
+  if (ae || !assocData?.length) return false;
+
+  const map = {};
+  for (const r of assocData) {
+    map[r.id] = {
+      id: r.id, name: r.name, reg: r.reg || '', sector: r.sector || '',
+      revenue: r.revenue || 0,
+      classification: r.classification || classify(r.revenue || 0),
+      location: r.location || 'إمارة', locationCity: r.location_city || '',
+      lawyer: r.lawyer || '', year: r.year || '2025',
+      status: r.status || 'preparing',
+      memberCount: r.member_count || '', bachelorCount: r.bachelor_count || '',
+      kinshipForms: r.kinship_forms || '', reserveFund: r.reserve_fund || {},
+      createdAt: r.created_at ? new Date(r.created_at).toLocaleDateString('ar-SA') : '',
+      assessment: { compliance:{}, transparency:{}, financial:{} },
+      legalNotes: {}, files: {}
+    };
+  }
+  for (const r of (asmtData || [])) {
+    const a = map[r.association_id]; if (!a) continue;
+    if (r.practice_id === '__notes__') {
+      a.legalNotes[`${r.standard}_${r.indicator}`] = r.notes || '';
+    } else {
+      if (!a.assessment[r.standard]) a.assessment[r.standard] = {};
+      if (!a.assessment[r.standard][r.indicator]) a.assessment[r.standard][r.indicator] = {};
+      // تجاهل قيم 'لا' المخزّنة تلقائياً بالكود القديم — القيمة الافتراضية لأي إجابة غائبة هي 'لا'
+      const sc = r.score;
+      if (sc && sc !== 'لا') a.assessment[r.standard][r.indicator][r.practice_id] = sc;
+    }
+  }
+  for (const r of (docData || [])) {
+    const a = map[r.association_id]; if (!a) continue;
+    const { standard: cKey, indicator_id: indId, practice_id: pracId } = r;
+    if (!cKey || !indId || !pracId) continue;
+    if (!a.files[cKey]) a.files[cKey] = {};
+    if (!a.files[cKey][indId]) a.files[cKey][indId] = {};
+    if (!a.files[cKey][indId][pracId]) a.files[cKey][indId][pracId] = [];
+    a.files[cKey][indId][pracId].push({
+      id: r.id, name: r.file_name, size: r.file_size,
+      type: r.file_type, date: r.upload_date || ''
+    });
+  }
+  CACHE = { associations: Object.values(map) };
+  return true;
+}
+
+// ══════════════════════════════════════════════
+//  AUTH — نظام مصادقة مخصص (users table + bcrypt)
+// ══════════════════════════════════════════════
+let currentUser  = null; // { id, email, name, role }
+let _sessionTimer = null;
+const SESSION_MS  = 3 * 60 * 60 * 1000; // 3 ساعات
+
+// ── الجلسة في الذاكرة (تعمل في file:// وdata:// بدون قيود المتصفح) ──
+let _sessionUser = null;
+let _sessionExp  = 0;
+
+function _setSession(user) {
+  currentUser  = user;
+  _sessionUser = user;
+  _sessionExp  = Date.now() + SESSION_MS;
+  // محاولة اختيارية للحفظ في sessionStorage (قد تفشل في data: URLs)
+  try {
+    sessionStorage.setItem('mswn_user', JSON.stringify(user));
+    sessionStorage.setItem('mswn_exp',  String(_sessionExp));
+  } catch {}
+}
+function _clearSession() {
+  currentUser  = null;
+  _sessionUser = null;
+  _sessionExp  = 0;
+  try { sessionStorage.removeItem('mswn_user'); sessionStorage.removeItem('mswn_exp'); } catch {}
+}
+function _getStoredSession() {
+  // أولاً: فحص الذاكرة (يعمل دائماً)
+  if (_sessionUser && Date.now() < _sessionExp) return _sessionUser;
+  // ثانياً: محاولة sessionStorage كاحتياط عند إعادة التحميل
+  try {
+    const exp = Number(sessionStorage.getItem('mswn_exp') || 0);
+    if (Date.now() < exp) {
+      const u = JSON.parse(sessionStorage.getItem('mswn_user') || 'null');
+      if (u) { _sessionUser = u; _sessionExp = exp; return u; }
+    }
+  } catch {}
+  return null;
+}
+
+// ── عرض / إخفاء الواجهات ──
+function showLoginPage() {
+  document.getElementById('login-overlay').classList.remove('hidden');
+  document.getElementById('main-header').classList.add('hidden');
+  document.getElementById('main-footer').classList.add('hidden');
+  document.getElementById('user-pill').classList.add('hidden');
+  document.getElementById('user-pill').classList.remove('flex');
+  document.getElementById('logout-btn').classList.add('hidden');
+  document.getElementById('admin-btn').classList.add('hidden');
+  clearTimeout(_sessionTimer);
+}
+
+function showMainApp(user) {
+  document.getElementById('login-overlay').classList.add('hidden');
+  document.getElementById('main-header').classList.remove('hidden');
+  document.getElementById('main-footer').classList.remove('hidden');
+  document.getElementById('user-pill').classList.remove('hidden');
+  document.getElementById('user-pill').classList.add('flex');
+  document.getElementById('logout-btn').classList.remove('hidden');
+  document.getElementById('user-email-display').textContent =
+    (user.name || user.email) + (user.role === 'admin' ? ' 👑' : '');
+  // زر الإدارة للمدير فقط
+  if (user.role === 'admin') document.getElementById('admin-btn').classList.remove('hidden');
+  else                        document.getElementById('admin-btn').classList.add('hidden');
+  _startSessionTimer();
+}
+
+function _startSessionTimer() {
+  clearTimeout(_sessionTimer);
+  const expiresAt = Date.now() + SESSION_MS;
+  const tick = () => {
+    const remaining = expiresAt - Date.now();
+    if (remaining <= 0) { doLogout(); return; }
+    const h = Math.floor(remaining / 3600000);
+    const m = Math.floor((remaining % 3600000) / 60000);
+    const el = document.getElementById('session-countdown');
+    if (el) { el.classList.remove('hidden'); el.textContent = `${h}:${String(m).padStart(2,'0')}`; }
+    _sessionTimer = setTimeout(tick, 30000);
+  };
+  tick();
+}
+
+// ── تسجيل الدخول ──
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
+  const pass  = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  const btn   = document.getElementById('login-btn');
+
+  errEl.classList.add('hidden');
+  if (!email || !pass) {
+    errEl.textContent = 'يرجى إدخال البريد الإلكتروني وكلمة السر';
+    errEl.classList.remove('hidden'); return;
+  }
+
+  btn.textContent = '…جاري التحقق'; btn.disabled = true; btn.style.opacity = '0.7';
+
+  try {
+    const { data: rows, error: qErr } = await SUPA
+      .from('users').select('id,email,name,role,password_hash').eq('email', email).limit(1);
+
+    if (qErr) throw new Error('db_error');
+
+    const row = rows?.[0];
+    let valid = false;
+    if (row?.password_hash) {
+      valid = await new Promise(res => bcrypt.compare(pass, row.password_hash, (e, r) => res(!e && r)));
+    }
+
+    if (!row || !valid) {
+      errEl.textContent = 'البريد الإلكتروني أو كلمة السر غير صحيحة';
+      errEl.classList.remove('hidden');
+      document.getElementById('login-pass').value = '';
+      return;
+    }
+
+    const user = { id: row.id, email: row.email, name: row.name, role: row.role };
+    _setSession(user);
+    showMainApp(user);
+    await initApp();
+
+  } catch (e) {
+    console.error('[doLogin error]', e);
+    const detail = e?.message || String(e);
+    errEl.textContent = e.message === 'db_error'
+      ? 'تعذّر الاتصال بقاعدة البيانات — تحقق من الاتصال'
+      : `خطأ: ${detail}`;
+    errEl.classList.remove('hidden');
+  } finally {
+    btn.textContent = 'تسجيل الدخول'; btn.disabled = false; btn.style.opacity = '1';
+  }
+}
+
+// ── تسجيل الخروج ──
+function doLogout() {
+  clearTimeout(_sessionTimer);
+  _clearSession();
+  CACHE = { associations: [] };
+  document.getElementById('app').innerHTML = '';
+  showLoginPage();
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-pass').value  = '';
+}
+
+function togglePassVis() {
+  const inp = document.getElementById('login-pass');
+  const eye = document.getElementById('pass-eye');
+  if (inp.type === 'password') { inp.type = 'text';     eye.textContent = '🙈'; }
+  else                         { inp.type = 'password'; eye.textContent = '👁';  }
+}
+
+async function initApp() {
+  document.getElementById('app').innerHTML =
+    `<div class="flex items-center justify-center h-64"><div class="text-center text-gray-400">
+      <div class="text-5xl mb-3">⏳</div>
+      <div class="font-bold text-lg">جاري تحميل البيانات…</div>
+    </div></div>`;
+  try {
+    await _loadFromSupa();
+  } catch (e) {
+    console.warn('Supabase غير متاح', e);
+    showSupaError();
+  }
+  renderDashboard();
+}
+
+function showSupaError() {
+  const b = document.createElement('div');
+  b.className = 'no-print fixed bottom-4 left-4 bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg z-50';
+  b.textContent = '⚠️ تعذّر الاتصال بـ Supabase — البيانات محلية فقط';
+  document.body.appendChild(b);
+  setTimeout(() => b.remove(), 6000);
+}
+
+function initAssocData(id, name, reg, sector, revenue, lawyer, year, locationCity) {
+  const cls = classify(revenue);
+  const locCity = locationCity || 'الرياض';
+  const a = { id, name, reg, sector, revenue: Number(revenue)||0, classification: cls, lawyer, year,
+    location: getCityTier(locCity), locationCity: locCity, memberCount: '', bachelorCount: '', kinshipForms: '',
+    reserveFund: {}, status:'preparing',
+    createdAt: new Date().toLocaleDateString('ar-SA'), assessment: {}, legalNotes: {}, files: {} };
+  for (const key of ['compliance','transparency','financial']) {
+    a.assessment[key] = {};
+    a.legalNotes[key] = {};
+  }
+  return a;
+}
+
+// ══════════════════════════════════════════════
+//  SCORING
+// ══════════════════════════════════════════════
+function isNotApplicable(assoc, cKey, indId) {
+  return IND[indId]?.applicabilityToggle &&
+    (assoc.assessment?.[cKey]?.[indId]?.['__applicable__'] === 'no');
+}
+function scoreIndicator(assoc, cKey, indId) {
+  const ind = IND[indId]; if (!ind) return { achieved:0, total:0, pct:0 };
+  if (isNotApplicable(assoc, cKey, indId)) return { achieved:0, total:0, pct:0, notApplicable:true };
+  const ans = assoc.assessment?.[cKey]?.[indId] || {};
+  let total = 0, achieved = 0;
+  for (const p of ind.practices) {
+    total += p.w;
+    const v = ans[p.id] || 'لا';
+    if (v === 'نعم') achieved += p.w;
+  }
+  return { achieved, total, pct: total > 0 ? Math.round((achieved/total)*100) : 0 };
+}
+function scoreCriteria(assoc, cKey) {
+  const inds = getIndicators(assoc)[cKey] || [];
+  let total = 0, achieved = 0;
+  for (const id of inds) {
+    const s = scoreIndicator(assoc, cKey, id);
+    if (!s.notApplicable) { total += s.total; achieved += s.achieved; }
+  }
+  return { achieved, total, pct: total > 0 ? Math.round((achieved/total)*100) : 0 };
+}
+function scoreOverall(assoc) {
+  const keys = ['compliance','transparency','financial'];
+  let sum = 0;
+  for (const k of keys) sum += scoreCriteria(assoc, k).pct;
+  return Math.round(sum / keys.length);
+}
+function pColor(p) { if (p>=80) return '#BE9F3F'; if (p>=50) return '#F59E0B'; return '#EF4444'; }
+
+// ══════════════════════════════════════════════
+//  BONUS SYSTEM — الدرجات الإضافية
+// ══════════════════════════════════════════════
+const MIN_MEMBERS = {
+  nano:   { إمارة:50, محافظة_أ:50, محافظة_ب:50, مركز_أ:50, مركز_ب:50 },
+  small:  { إمارة:70, محافظة_أ:70, محافظة_ب:70, مركز_أ:70, مركز_ب:50 },
+  medium: { إمارة:100, محافظة_أ:70, محافظة_ب:50, مركز_أ:50, مركز_ب:50 },
+  large:  { إمارة:150, محافظة_أ:150, محافظة_ب:100, مركز_أ:70, مركز_ب:50 },
+  xlarge: { إمارة:200, محافظة_أ:150, محافظة_ب:100, مركز_أ:70, مركز_ب:50 },
+};
+const CITIES_A = ['الرياض','مكة المكرمة','المدينة المنورة','الدمام','الخبر','الظهران','جدة','بريدة','أبها','جازان','حائل','تبوك','نجران','سكاكا','الباحة','عرعر','الطائف','ظهر الباطن','الأحساء','الدرعية','العلا'];
+const CITIES_B = ['الخرج','الزلفي','وادي الدواسر','عنيزة','الدوادمي','الجمعة','شقراء','خميس مشيط','البكيرية','القويعية','عفيف','ينبع','الجبيل','الخفجي','بيشة','الرس','محايل عسير','ظهران الجنوب','النماص','تيماء','قيفاء','صبيا','القريات','بلجرشي'];
+const TIER_KEYS = ['إمارة','محافظة_أ','محافظة_ب','مركز_أ','مركز_ب'];
+function getCityTier(city) {
+  if (!city) return 'إمارة';
+  if (TIER_KEYS.includes(city)) return city;
+  if (CITIES_A.includes(city)) return 'إمارة';
+  if (CITIES_B.includes(city)) return 'محافظة_أ';
+  return 'محافظة_ب';
+}
+function getCityLabel(assoc) {
+  const city = assoc.locationCity || assoc.location || 'الرياض';
+  const TIER_MAP = { إمارة:'مقر إمارة', محافظة_أ:'محافظة أ', محافظة_ب:'محافظة ب', مركز_أ:'مركز أ', مركز_ب:'مركز ب' };
+  return TIER_KEYS.includes(city) ? TIER_MAP[city] : city;
+}
+function buildLocationSelect(selectedCity, selId, customId, onchangeExpr) {
+  const isCustom = !CITIES_A.includes(selectedCity) && !CITIES_B.includes(selectedCity) && !TIER_KEYS.includes(selectedCity) && selectedCity !== '';
+  const oldTierSel = TIER_KEYS.includes(selectedCity) ? selectedCity : '';
+  const selVal = isCustom ? '__custom__' : (selectedCity || CITIES_A[0]);
+  return `<select id="${selId}" onchange="${onchangeExpr}" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-mo">
+    <optgroup label="── التصنيف (أ) - مقر إمارة / مدينة كبيرة ──">
+      ${CITIES_A.map(c=>`<option value="${c}" ${selVal===c?'selected':''}>${c}</option>`).join('')}
+    </optgroup>
+    <optgroup label="── التصنيف (ب) - محافظة أ ──">
+      ${CITIES_B.map(c=>`<option value="${c}" ${selVal===c?'selected':''}>${c}</option>`).join('')}
+    </optgroup>
+    <optgroup label="── التصنيف (ج) - محافظة ب / مركز ──">
+      <option value="__custom__" ${selVal==='__custom__'||oldTierSel==='محافظة_ب'||oldTierSel==='مركز_أ'||oldTierSel==='مركز_ب'?'selected':''}>أخرى — أدخل الاسم يدوياً</option>
+    </optgroup>
+  </select>
+  <input id="${customId}" type="text" placeholder="اكتب اسم المحافظة أو المركز"
+    value="${isCustom||oldTierSel?''+(isCustom?selectedCity:''):''}"
+    class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-mo mt-1 ${(isCustom||oldTierSel==='محافظة_ب'||oldTierSel==='مركز_أ'||oldTierSel==='مركز_ب')?'':'hidden'}">`;
+}
+function getMinMembers(cls, loc) {
+  return MIN_MEMBERS[cls]?.[getCityTier(loc)] ?? 50;
+}
+function calcBonus(assoc) {
+  const base = scoreOverall(assoc);
+  const memberCount  = Number(assoc.memberCount)   || 0;
+  const bachelorCount= Number(assoc.bachelorCount) || 0;
+  const bachelorPct  = memberCount > 0 ? Math.round((bachelorCount / memberCount) * 100) : 0;
+  const minReq       = getMinMembers(assoc.classification || 'small', assoc.locationCity || assoc.location || 'الرياض');
+  const enoughMembers= memberCount >= minReq;
+  const academic     = enoughMembers && bachelorPct >= 50;
+  const kinship      = (assoc.kinshipForms || '') === 'نعم';
+  const bonusPts     = (academic ? 12 : 0) + (kinship ? 12 : 0);  // +0.12 per 1.00 scale = 12 pts
+  const effective    = base >= 100 ? 0 : Math.min(100 - base, bonusPts);
+  const finalScore   = base + effective;
+  return { base, academic, kinship, bonusPts, effective, finalScore,
+           bachelorPct, memberCount, bachelorCount, minReq, enoughMembers };
+}
+function calcReserveFund(assoc) {
+  const rf = assoc.reserveFund || {};
+  const rev  = Number(rf.unrestrictedRev)  || 0;
+  const exp  = Number(rf.unrestrictedExp)  || 0;
+  const adm1 = Number(rf.adminExp1) || 0;
+  const adm2 = Number(rf.adminExp2) || 0;
+  const adm3 = Number(rf.adminExp3) || 0;
+  const surplus  = rev - exp;
+  const avgAdmin = (adm1 + adm2 + adm3) / 3;
+  const maxRes   = avgAdmin;
+  const avail75  = maxRes * 0.75;
+  return { surplus, avgAdmin, maxRes, avail75 };
+}
+function saveAssocField(assocId, field, value) {
+  const d = load(); const a = d.associations.find(x=>x.id===assocId);
+  if (a) { a[field] = value; save(d); _supaUpsertAssoc(assocId).catch(()=>{}); }
+}
+function saveReserveFund(assocId, field, value) {
+  const d = load(); const a = d.associations.find(x=>x.id===assocId);
+  if (a) {
+    if (!a.reserveFund) a.reserveFund = {};
+    a.reserveFund[field] = Number(value) || 0;
+    save(d);
+    updateReserveFundUI(assocId);
+    _supaUpsertAssoc(assocId).catch(()=>{});
+  }
+}
+function updateReserveFundUI(assocId) {
+  const d = load(); const a = d.associations.find(x=>x.id===assocId); if (!a) return;
+  const rf = calcReserveFund(a);
+  const el = document.getElementById('rf-result');
+  if (!el) return;
+  if (rf.surplus <= 0) {
+    el.innerHTML = `<div class="text-red-600 font-bold text-sm">⛔ لا يمكن تفعيل الاحتياطي النظامي هذا العام — الإيرادات غير المقيدة لا تغطي المصروفات.</div>`;
+  } else {
+    el.innerHTML = `
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+        <div class="rounded-lg p-2" style="background:#EFDFB1;"><div class="text-xs text-gray-500">الفوائض</div><div class="font-black text-sm" style="color:#303034;">${rf.surplus.toLocaleString('ar-SA')} ﷼</div></div>
+        <div class="rounded-lg p-2" style="background:#EFDFB1;"><div class="text-xs text-gray-500">متوسط المصاريف</div><div class="font-black text-sm" style="color:#303034;">${Math.round(rf.avgAdmin).toLocaleString('ar-SA')} ﷼</div></div>
+        <div class="rounded-lg p-2 border-2" style="border-color:#BE9F3F;"><div class="text-xs text-gray-500">الحد الأقصى</div><div class="font-black text-sm" style="color:#BE9F3F;">${Math.round(rf.maxRes).toLocaleString('ar-SA')} ﷼</div></div>
+        <div class="rounded-lg p-2" style="background:#303034;"><div class="text-xs" style="color:#EFDFB1;">المتاح للتوظيف (75%)</div><div class="font-black text-sm text-white">${Math.round(rf.avail75).toLocaleString('ar-SA')} ﷼</div></div>
+      </div>
+      <div class="mt-2 text-xs text-green-700 font-bold">✅ يمكن تفعيل الاحتياطي النظامي — الحد الأقصى: ${Math.round(rf.maxRes).toLocaleString('ar-SA')} ريال — المتاح للتوظيف: ${Math.round(rf.avail75).toLocaleString('ar-SA')} ريال</div>`;
+  }
+}
+function pRing(pct, size=60, sw=6) {
+  const r=(size-sw)/2, c=2*Math.PI*r, off=c-(pct/100)*c, col=pColor(pct);
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#E5E7EB" stroke-width="${sw}"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${col}" stroke-width="${sw}"
+      stroke-dasharray="${c}" stroke-dashoffset="${off}" stroke-linecap="round"
+      transform="rotate(-90 ${size/2} ${size/2})"/>
+    <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle"
+      font-size="${size<50?9:12}" font-weight="700" fill="${col}">${pct}%</text>
+  </svg>`;
+}
+function clsBadge(c) {
+  const m = CLS[c]; if(!m) return '';
+  return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold ${m.badge}">
+    <span class="w-2 h-2 rounded-full ${m.dot}"></span>${m.label}</span>`;
+}
+function statusBadge(s) {
+  const m = {preparing:['قيد الإعداد','bg-amber-100 text-amber-800'],completed:['مكتمل','bg-green-100 text-green-800'],review:['يحتاج مراجعة','bg-red-100 text-red-800']};
+  const [l,cls]= m[s]||m.preparing;
+  return `<span class="px-2.5 py-1 rounded-full text-xs font-bold ${cls}">${l}</span>`;
+}
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+let S = { view:'dashboard', assocId:null, cKey:null, indId:null, tab:'assessment', delId:null };
+function setH(bc) {
+  document.getElementById('hbc').textContent = bc||'';
+  document.getElementById('home-btn').classList.toggle('hidden', S.view==='dashboard');
+}
+function goHome() { S.view='dashboard'; S.assocId=null; renderDashboard(); }
+
+// ══════════════════════════════════════════════
+//  FILE STORAGE — IndexedDB
+// ══════════════════════════════════════════════
+let idb = null;
+function openDB() {
+  return new Promise((resolve, reject) => {
+    if (idb) { resolve(idb); return; }
+    const req = indexedDB.open('mswn_files_v1', 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore('files', { keyPath: 'id' });
+    req.onsuccess = e => { idb = e.target.result; resolve(idb); };
+    req.onerror = e => reject(e.target.error);
+  });
+}
+function formatSize(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(1) + ' MB';
+}
+function countFilesTotal(assoc) {
+  let n = 0;
+  for (const c of Object.values(assoc.files||{}))
+    for (const ind of Object.values(c))
+      for (const p of Object.values(ind)) n += p.length;
+  return n;
+}
+function countFilesByCriteria(assoc, cKey) {
+  let n = 0;
+  for (const ind of Object.values(assoc.files?.[cKey]||{}))
+    for (const p of Object.values(ind)) n += p.length;
+  return n;
+}
+function getFileMeta(assocId, cKey, indId, pracId) {
+  const data = load();
+  const a = data.associations.find(x => x.id === assocId);
+  return a?.files?.[cKey]?.[indId]?.[pracId] || [];
+}
+function renderFilesHTML(assocId, cKey, indId, pracId) {
+  const files = getFileMeta(assocId, cKey, indId, pracId);
+  if (!files.length) return '<div class="text-xs text-gray-400 italic py-1">لا توجد مستندات مرفوعة</div>';
+  return files.map(f => `
+    <div class="flex items-center gap-2 rounded-lg px-2 py-1.5 mt-1 text-xs" style="background:#f9fafb;border:1px solid #e5e7eb;">
+      <span class="text-base flex-shrink-0">${f.type==='application/pdf'?'📄':'🖼️'}</span>
+      <span class="flex-1 font-medium text-gray-700 truncate" style="max-width:160px;" title="${f.name}">${f.name}</span>
+      <span class="text-gray-400 whitespace-nowrap flex-shrink-0">${formatSize(f.size)}</span>
+      <span class="text-gray-300 flex-shrink-0">·</span>
+      <span class="text-gray-400 whitespace-nowrap flex-shrink-0">${f.date}</span>
+      <button onclick="previewFile('${f.id}')" class="flex-shrink-0 px-1.5 py-0.5 rounded font-bold text-xs transition" style="color:#303034;background:#EFDFB1;" title="معاينة">👁️</button>
+      <button onclick="confirmFileDelete('${assocId}','${cKey}','${indId}','${pracId}','${f.id}')" class="flex-shrink-0 text-red-400 hover:text-red-600 px-1" title="حذف">🗑️</button>
+    </div>`).join('');
+}
+async function handleFileUpload(event, assocId, cKey, indId, pracId) {
+  const file = event.target.files[0]; if (!file) return;
+  if (!['application/pdf','image/png','image/jpeg'].includes(file.type)) {
+    alert('نوع الملف غير مدعوم — يرجى رفع PDF أو PNG أو JPEG فقط');
+    event.target.value=''; return;
+  }
+  if (file.size > 2*1024*1024) {
+    alert('حجم الملف يتجاوز 2 ميجابايت');
+    event.target.value=''; return;
+  }
+  const id = `${assocId}_${cKey}_${indId}_${pracId}_${Date.now()}`;
+  const date = new Date().toLocaleDateString('ar-SA');
+  const meta = { id, name:file.name, size:file.size, type:file.type, date };
+  const buf = await file.arrayBuffer();
+  const db = await openDB();
+  const tx = db.transaction('files','readwrite');
+  tx.objectStore('files').put({ id, data:buf, type:file.type, name:file.name });
+  const d = load(); const a = d.associations.find(x=>x.id===assocId);
+  if (a) {
+    if(!a.files) a.files={};
+    if(!a.files[cKey]) a.files[cKey]={};
+    if(!a.files[cKey][indId]) a.files[cKey][indId]={};
+    if(!a.files[cKey][indId][pracId]) a.files[cKey][indId][pracId]=[];
+    a.files[cKey][indId][pracId].push(meta);
+    save(d);
+  }
+  const el = document.getElementById(`flist_${assocId}_${cKey}_${indId}_${pracId}`);
+  if (el) el.innerHTML = renderFilesHTML(assocId, cKey, indId, pracId);
+  event.target.value='';
+  // مزامنة مع Supabase
+  SUPA.from('documents').insert({
+    id, association_id: assocId, standard: cKey,
+    indicator_id: indId, practice_id: pracId,
+    file_name: file.name, file_size: file.size, file_type: file.type,
+    upload_date: date
+  }).catch(e => console.warn('[docs insert]', e));
+}
+async function previewFile(fileId) {
+  try {
+    const db = await openDB();
+    const tx = db.transaction('files','readonly');
+    const req = tx.objectStore('files').get(fileId);
+    req.onsuccess = e => {
+      const rec = e.target.result;
+      if (!rec) { alert('الملف غير موجود — ربما تم حذفه من المتصفح'); return; }
+      const blob = new Blob([rec.data], { type:rec.type });
+      const url = URL.createObjectURL(blob);
+      const w = window.open(url,'_blank');
+      if (!w) alert('يرجى السماح للمتصفح بفتح نوافذ منبثقة');
+      setTimeout(()=>URL.revokeObjectURL(url), 30000);
+    };
+  } catch(e) { alert('تعذّر معاينة الملف'); }
+}
+let _delFile = null;
+function confirmFileDelete(assocId, cKey, indId, pracId, fileId) {
+  _delFile = { assocId, cKey, indId, pracId, fileId };
+  document.getElementById('file-del-modal').classList.remove('hidden');
+}
+async function doFileDelete() {
+  if (!_delFile) return;
+  const { assocId, cKey, indId, pracId, fileId } = _delFile;
+  try {
+    const db = await openDB();
+    db.transaction('files','readwrite').objectStore('files').delete(fileId);
+  } catch(e) {}
+  const d = load(); const a = d.associations.find(x=>x.id===assocId);
+  if (a?.files?.[cKey]?.[indId]?.[pracId]) {
+    a.files[cKey][indId][pracId] = a.files[cKey][indId][pracId].filter(f=>f.id!==fileId);
+    save(d);
+  }
+  const el = document.getElementById(`flist_${assocId}_${cKey}_${indId}_${pracId}`);
+  if (el) el.innerHTML = renderFilesHTML(assocId, cKey, indId, pracId);
+  document.getElementById('file-del-modal').classList.add('hidden');
+  _delFile = null;
+  // مزامنة مع Supabase
+  SUPA.from('documents').delete().eq('id', fileId).catch(e => console.warn('[docs delete]', e));
+}
+openDB().catch(()=>{});
+
+// ══════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════
+function renderDashboard() {
+  S.view='dashboard'; setH('');
+  const data = load(); const As = data.associations;
+  const stats = { total:As.length, completed:As.filter(a=>a.status==='completed').length,
+    preparing:As.filter(a=>a.status==='preparing').length, review:As.filter(a=>a.status==='review').length };
+  const avg = As.length ? Math.round(As.reduce((s,a)=>s+scoreOverall(a),0)/As.length) : 0;
+
+  const cards = As.length===0 ? `
+    <div class="col-span-full text-center py-20 fade-in">
+      <div class="text-6xl mb-4">🏛️</div>
+      <p class="text-gray-400 text-lg font-bold">لا توجد جمعيات مضافة بعد</p>
+      <button onclick="openAddModal()" class="mt-5 px-6 py-3 rounded-xl font-bold transition" style="background:#BE9F3F;color:#fff;">+ إضافة جمعية</button>
+    </div>` :
+    As.map(a => {
+      const ov = scoreOverall(a);
+      const cp = scoreCriteria(a,'compliance').pct;
+      const tp = scoreCriteria(a,'transparency').pct;
+      const fp = scoreCriteria(a,'financial').pct;
+      const c = CLS[a.classification] || CLS.small;
+      return `
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 card-hover fade-in overflow-hidden gold-card">
+        <div class="p-4 flex items-start justify-between" style="background:#303034;">
+          <div class="flex-1 min-w-0">
+            <h3 class="text-white font-bold text-base truncate">${a.name}</h3>
+            <div class="flex flex-wrap items-center gap-2 mt-1.5">
+              ${clsBadge(a.classification)}
+              ${a.reg ? `<span class="text-gray-300 text-xs">${a.reg}</span>` : ''}
+            </div>
+          </div>
+          <div class="flex-shrink-0 mr-2">${pRing(ov,54,5)}</div>
+        </div>
+        <div class="p-4">
+          <div class="flex items-center justify-between mb-3">
+            ${statusBadge(a.status)}
+            <span class="text-gray-400 text-xs">${a.createdAt||''}</span>
+          </div>
+          <div class="space-y-1.5 mb-4">
+            ${[['compliance','📋'],['transparency','🔍'],['financial','💰']].map(([k,ic])=>{
+              const sc = scoreCriteria(a,k);
+              return `<div class="flex items-center gap-2">
+                <span class="text-xs text-gray-500 w-32 truncate">${ic} ${CRITERIA_META[k].label}</span>
+                <div class="flex-1 bg-gray-100 rounded-full h-1.5">
+                  <div class="h-1.5 rounded-full" style="width:${sc.pct}%;background:${pColor(sc.pct)}"></div>
+                </div>
+                <span class="text-xs font-bold w-8" style="color:${pColor(sc.pct)}">${sc.pct}%</span>
+              </div>`;
+            }).join('')}
+          </div>
+          <div class="flex gap-2">
+            <button onclick="viewAssoc('${a.id}')" class="flex-1 py-2 rounded-xl text-sm font-bold transition" style="background:#303034;color:#fff;">فتح الملف</button>
+            <button onclick="printReport('${a.id}')" class="px-3 py-2 rounded-xl text-sm font-bold transition" style="background:#BE9F3F;color:#fff;" title="طباعة التقرير">🖨️</button>
+            <button onclick="delAssoc('${a.id}')" class="bg-red-50 text-red-500 px-3 py-2 rounded-xl text-sm hover:bg-red-100 transition" title="حذف">🗑️</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+  document.getElementById('app').innerHTML = `
+    <div class="fade-in">
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <div class="md:col-span-1 rounded-2xl p-4 flex flex-col items-center justify-center text-white gold-card" style="background:#303034;">
+          <div class="text-3xl font-black" style="color:#BE9F3F;">${stats.total}</div><div class="text-xs mt-1" style="color:#EFDFB1;">إجمالي الجمعيات</div>
+        </div>
+        <div class="bg-white rounded-2xl p-4 flex flex-col items-center justify-center shadow-sm border border-gray-100">
+          <div class="text-2xl font-black text-green-600">${stats.completed}</div><div class="text-xs text-gray-400 mt-1">مكتملة</div>
+        </div>
+        <div class="bg-white rounded-2xl p-4 flex flex-col items-center justify-center shadow-sm border border-gray-100">
+          <div class="text-2xl font-black text-amber-500">${stats.preparing}</div><div class="text-xs text-gray-400 mt-1">قيد الإعداد</div>
+        </div>
+        <div class="bg-white rounded-2xl p-4 flex flex-col items-center justify-center shadow-sm border border-gray-100">
+          <div class="text-2xl font-black text-red-500">${stats.review}</div><div class="text-xs text-gray-400 mt-1">تحتاج مراجعة</div>
+        </div>
+        <div class="bg-white rounded-2xl p-4 flex flex-col items-center justify-center shadow-sm border border-gray-100">
+          <div class="text-2xl font-black" style="color:${pColor(avg)}">${avg}%</div><div class="text-xs text-gray-400 mt-1">متوسط الاكتمال</div>
+        </div>
+      </div>
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="text-xl font-black text-mgl">الجمعيات العميلة</h2>
+          <p class="text-gray-400 text-sm">وفق دليل التقييم الذاتي — الإصدار الأول، مايو 2026م</p>
+        </div>
+        <button onclick="openAddModal()" class="px-5 py-2.5 rounded-xl font-bold transition flex items-center gap-2 shadow-lg" style="background:#BE9F3F;color:#fff;">
+          <span class="text-lg">+</span> إضافة جمعية
+        </button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">${cards}</div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════
+//  ASSOCIATION VIEW
+// ══════════════════════════════════════════════
+function viewAssoc(id) {
+  S.view='association'; S.assocId=id; S.tab='assessment';
+  const data=load(); const a=data.associations.find(x=>x.id===id); if(!a){goHome();return;}
+  setH(a.name);
+  const ov=scoreOverall(a); const cls=CLS[a.classification]||CLS.small;
+  const rev=a.revenue?Number(a.revenue).toLocaleString('ar-SA'):'—';
+
+  const criteriaHTML = ['compliance','transparency','financial'].map(cKey => {
+    const meta=CRITERIA_META[cKey]; const sc=scoreCriteria(a,cKey);
+    const inds=getIndicators(a)[cKey];
+    const indCards = inds.map(indId => {
+      const ind=IND[indId]; if(!ind) return '';
+      const s=scoreIndicator(a,cKey,indId);
+      const notAppl = s.notApplicable;
+      const allAnswered = !notAppl && ind.practices.every(p => (a.assessment?.[cKey]?.[indId]||{})[p.id] && (a.assessment[cKey][indId][p.id]!==''));
+      return `
+      <div onclick="viewIndicator('${id}','${cKey}','${indId}')"
+           class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 cursor-pointer hover:bg-mgp/30 hover:border-mo/40 transition group">
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-bold text-gray-700 group-hover:text-mo truncate">${ind.name}</div>
+          <div class="text-xs text-gray-400 mt-0.5">${notAppl ? 'غير منطبق' : ind.practices.length+' ممارسات'+(allAnswered?' · مكتمل':'')}</div>
+          ${notAppl ? '' : `<div class="mt-1.5 bg-gray-200 rounded-full h-1.5">
+            <div class="h-1.5 rounded-full transition-all" style="width:${s.pct}%;background:${pColor(s.pct)}"></div>
+          </div>`}
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-black" style="color:${notAppl?'#9CA3AF':pColor(s.pct)}">${notAppl?'—':s.pct+'%'}</span>
+          ${s.pct>=80?'<span class="text-green-500">✅</span>':s.pct>=50?'<span class="text-amber-500">⚠️</span>':'<span class="text-red-400">❌</span>'}
+        </div>
+        <span class="text-gray-300 group-hover:text-mg text-sm">←</span>
+      </div>`;
+    }).join('');
+
+    const bgCls = {compliance:'border-gray-200',transparency:'border-gray-200',financial:'border-gray-200'}[cKey];
+    return `
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="border-b ${bgCls} p-4 flex items-center justify-between" style="background:#303034;border-top:4px solid #BE9F3F;">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">${meta.icon}</span>
+          <div>
+            <div class="font-black" style="color:#BE9F3F;">${meta.label}</div>
+            <div class="text-xs" style="color:#EFDFB1;opacity:0.8;">${inds.length} مؤشرات · ${countFilesByCriteria(a,cKey)} 📎</div>
+          </div>
+        </div>
+        ${pRing(sc.pct,52,5)}
+      </div>
+      <div class="p-3 space-y-2">${indCards}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('app').innerHTML = `
+    <div class="fade-in">
+      <!-- Assoc Header -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-5">
+        <div class="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+          <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#303034;">
+              <span class="text-2xl">🏛️</span>
+            </div>
+            <div>
+              <h2 class="text-xl font-black text-mgl">${a.name}</h2>
+              <div class="flex flex-wrap items-center gap-3 mt-1">
+                ${clsBadge(a.classification)}
+                ${a.reg?`<span class="text-gray-500 text-sm">📄 ${a.reg}</span>`:''}
+                ${a.sector?`<span class="text-gray-500 text-sm">🏷️ ${a.sector}</span>`:''}
+                ${a.lawyer?`<span class="text-gray-500 text-sm">⚖️ ${a.lawyer}</span>`:''}
+              </div>
+              <div class="mt-1 text-xs text-gray-400">
+                الإيرادات: ${rev} ريال · ${cls.range} · سنة التقييم: ${a.year||'2025'}
+              </div>
+              <div class="mt-1 text-xs font-bold" style="color:#BE9F3F;">
+                📎 إجمالي المستندات المرفوعة: ${countFilesTotal(a)} ملف
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 flex-shrink-0">
+            ${pRing(ov, 72, 7)}
+            <div class="space-y-2">
+              <div class="text-xs text-gray-500 font-bold">تغيير الحالة:</div>
+              <select onchange="updateStatus('${id}',this.value)" class="text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:border-mo w-full">
+                <option value="preparing" ${a.status==='preparing'?'selected':''}>قيد الإعداد</option>
+                <option value="completed" ${a.status==='completed'?'selected':''}>مكتمل</option>
+                <option value="review" ${a.status==='review'?'selected':''}>يحتاج مراجعة</option>
+              </select>
+              <button onclick="printReport('${id}')" class="w-full px-3 py-1.5 rounded-lg text-xs font-bold transition" style="background:#BE9F3F;color:#fff;">🖨️ طباعة التقرير</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notice -->
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 text-sm text-blue-800">
+        <strong>ℹ️ ملاحظة:</strong> هذه الجمعية مصنفة ضمن فئة <strong>${cls.label}</strong> وفق إيرادات العام المالي السابق البالغة <strong>${rev}</strong> ريال —
+        يطبق عليها دليل التقييم الذاتي الخاص بهذه الفئة الصادر من المركز الوطني لتنمية القطاع غير الربحي، الإصدار الأول، مايو 2026م.
+      </div>
+
+      <!-- Alerts -->
+      <div class="space-y-2 mb-4">
+        <div class="bg-amber-50 border border-amber-300 rounded-xl p-3 text-xs text-amber-800 flex items-start gap-2">
+          <span class="flex-shrink-0">⚠️</span>
+          <span>يُعاد التصنيف سنوياً بناءً على إيرادات العام المالي السابق — يرجى تحديث الإيرادات في بداية كل سنة مالية.</span>
+        </div>
+        <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-800 flex items-start gap-2">
+          <span class="flex-shrink-0">🚫</span>
+          <span>لا يمكن للجمعية الوصول إلى التقييم الذاتي ما لم تعتمد قوائمها المالية للعام 2025 من مراجع حسابات خارجي مستقل.</span>
+        </div>
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs text-gray-600 flex items-start gap-2">
+          <span class="flex-shrink-0">📌</span>
+          <span>النتيجة الأولية مبنية على الاستجابات المدخلة وليست الدرجة النهائية المعتمدة — ستتم مراجعة التقييم من قِبل المركز الوطني.</span>
+        </div>
+        ${(()=>{
+          const bn = calcBonus(a);
+          const alerts = [];
+          if (!bn.enoughMembers && (a.memberCount !== '' && a.memberCount !== undefined))
+            alerts.push(`عدد الأعضاء الحالي (${bn.memberCount}) أقل من الحد الأدنى المطلوب (${bn.minReq}) — لا يمكن احتساب درجة الكفاءة العلمية.`);
+          else if (bn.memberCount > 0 && bn.bachelorPct < 50)
+            alerts.push(`نسبة حاملي البكالوريوس (${bn.bachelorPct}%) أقل من 50% — رفعها يحقق الدرجة الإضافية للكفاءة العلمية (+0.12%).`);
+          if ((a.kinshipForms||'') === 'لا' || (a.kinshipForms||'') === 'جزئي')
+            alerts.push(`نماذج إفصاح القرابة ${a.kinshipForms==='جزئي'?'مكتملة جزئياً':'غير مكتملة'} — استكمالها لجميع الأعضاء يحقق الدرجة الإضافية (+0.12%).`);
+          return alerts.map(t=>`
+            <div class="border rounded-xl p-3 text-xs flex items-start gap-2" style="background:#FFF7ED;border-color:#F97316;">
+              <span class="flex-shrink-0" style="color:#EA580C;">🔶</span>
+              <span style="color:#9A3412;">${t}</span>
+            </div>`).join('');
+        })()}
+      </div>
+
+      <!-- بيانات الدرجات الإضافية -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4 gold-card">
+        <h3 class="font-black mb-4" style="color:#303034;">📋 بيانات الدرجات الإضافية</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">الموقع الجغرافي</label>
+            ${(()=>{
+              const curCity = a.locationCity || a.location || 'الرياض';
+              const isOldTier = TIER_KEYS.includes(curCity) && !CITIES_A.includes(curCity) && !CITIES_B.includes(curCity);
+              const isCustom = !CITIES_A.includes(curCity) && !CITIES_B.includes(curCity) && !TIER_KEYS.includes(curCity);
+              const tierC = isOldTier && (curCity==='محافظة_ب'||curCity==='مركز_أ'||curCity==='مركز_ب');
+              const showCustom = isCustom || tierC;
+              const selVal = (CITIES_A.includes(curCity)||CITIES_B.includes(curCity)) ? curCity : '__custom__';
+              const customVal = showCustom ? (isCustom ? curCity : '') : '';
+              return `<select id="loc-sel-${id}" onchange="onViewLocChange('${id}')"
+                class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-mo">
+                <optgroup label="── التصنيف (أ) - مقر إمارة ──">
+                  ${CITIES_A.map(c=>`<option value="${c}" ${selVal===c?'selected':''}>${c}</option>`).join('')}
+                </optgroup>
+                <optgroup label="── التصنيف (ب) - محافظة أ ──">
+                  ${CITIES_B.map(c=>`<option value="${c}" ${selVal===c?'selected':''}>${c}</option>`).join('')}
+                </optgroup>
+                <optgroup label="── التصنيف (ج) - محافظة ب / مركز ──">
+                  <option value="__custom__" ${selVal==='__custom__'?'selected':''}>أخرى — أدخل الاسم يدوياً</option>
+                </optgroup>
+              </select>
+              <input id="loc-custom-${id}" type="text" placeholder="اكتب اسم المحافظة أو المركز"
+                value="${customVal}"
+                onchange="saveLocation('${id}',this.value)"
+                class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-mo mt-1 ${showCustom?'':'hidden'}">`;
+            })()}
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">عدد أعضاء الجمعية العمومية</label>
+            <input type="number" min="0" value="${a.memberCount||''}" placeholder="مثال: 80"
+              onchange="saveAssocField('${id}','memberCount',this.value);viewAssoc('${id}')"
+              class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-mo">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">حاملو البكالوريوس فأعلى</label>
+            <input type="number" min="0" value="${a.bachelorCount||''}" placeholder="مثال: 50"
+              onchange="saveAssocField('${id}','bachelorCount',this.value);viewAssoc('${id}')"
+              class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-mo">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">نماذج إفصاح القرابة</label>
+            <select onchange="saveAssocField('${id}','kinshipForms',this.value);viewAssoc('${id}')"
+              class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-mo">
+              <option value="" ${!(a.kinshipForms)?'selected':''}>— اختر —</option>
+              <option value="نعم" ${a.kinshipForms==='نعم'?'selected':''}>✅ نعم — مكتملة للجميع</option>
+              <option value="جزئي" ${a.kinshipForms==='جزئي'?'selected':''}>⚡ جزئي — ناقصة</option>
+              <option value="لا" ${a.kinshipForms==='لا'?'selected':''}>❌ لا — لم تُعبَّأ</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- قسم الدرجات الإضافية -->
+      ${(()=>{
+        const bn = calcBonus(a);
+        const minReqRow = `<span class="font-bold" style="color:#303034;">${bn.minReq}</span> عضو (${getCityLabel(a)} — ${cls.label})`;
+        const acadStatus = bn.academic
+          ? `<div class="text-green-700 font-bold text-sm">✅ تستحق الجمعية درجة إضافية <span style="color:#BE9F3F;">+0.12%</span></div>`
+          : `<div class="text-red-600 font-bold text-sm">❌ لم يتحقق الشرط بعد</div>`;
+        const kinStatus = bn.kinship
+          ? `<div class="text-green-700 font-bold text-sm">✅ تستحق الجمعية درجة إضافية <span style="color:#BE9F3F;">+0.12%</span></div>`
+          : `<div class="text-red-600 font-bold text-sm">❌ يلزم استكمال النماذج لجميع الأعضاء</div>`;
+        const totalBonus = (bn.academic?0.12:0)+(bn.kinship?0.12:0);
+        const summaryColor = totalBonus>0 ? '#BE9F3F' : '#6B7280';
+        return `
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4 gold-card">
+          <h3 class="font-black mb-4" style="color:#303034;">🌟 الدرجات الإضافية — الدليل الاسترشادي، مايو 2026م</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <!-- محفز الكفاءة العلمية -->
+            <div class="rounded-xl p-4 border" style="border-color:#E5E7EB;background:#FAFAFA;">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-xl">🎓</span>
+                <div class="font-black text-gray-800">محفز الكفاءة العلمية</div>
+                <span class="text-xs px-2 py-0.5 rounded-full font-bold" style="background:#EFDFB1;color:#303034;">+0.12%</span>
+              </div>
+              <div class="space-y-1 text-xs text-gray-600 mb-3">
+                <div>الحد الأدنى للأعضاء: ${minReqRow}</div>
+                <div>العدد الحالي: <strong>${bn.memberCount||'—'}</strong> عضو
+                  ${bn.memberCount>=bn.minReq?'<span class="text-green-600">✔ كافٍ</span>':'<span class="text-red-500">✘ غير كافٍ</span>'}
+                </div>
+                <div>نسبة البكالوريوس: <strong style="color:${bn.bachelorPct>=50?'#BE9F3F':'#EF4444'}">${bn.memberCount>0?bn.bachelorPct+'%':'—'}</strong>
+                  ${bn.memberCount>0?(bn.bachelorPct>=50?'<span class="text-green-600">≥50% ✔</span>':'<span class="text-red-500">&lt;50% ✘</span>'):''}
+                </div>
+              </div>
+              ${acadStatus}
+            </div>
+            <!-- محفز القرابة -->
+            <div class="rounded-xl p-4 border" style="border-color:#E5E7EB;background:#FAFAFA;">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-xl">📝</span>
+                <div class="font-black text-gray-800">محفز إفصاح القرابة</div>
+                <span class="text-xs px-2 py-0.5 rounded-full font-bold" style="background:#EFDFB1;color:#303034;">+0.12%</span>
+              </div>
+              <div class="space-y-1 text-xs text-gray-600 mb-3">
+                <div>الشرط: وجود نموذج إفصاح لكل عضو يُقرّ بعدم وجود صلة قرابة من الدرجة الأولى حتى الرابعة أو الإفصاح عنها.</div>
+                <div class="mt-2">الحالة: <strong>${a.kinshipForms||'لم يُحدَّد'}</strong></div>
+              </div>
+              ${kinStatus}
+            </div>
+          </div>
+          <!-- ملخص -->
+          <div class="rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4" style="background:#303034;">
+            <div>
+              <div class="text-white font-black text-sm mb-1">إجمالي الدرجات الإضافية المحققة</div>
+              <div class="text-xs" style="color:#EFDFB1;">لا تُحتسب إلا إذا كانت النتيجة أقل من 100% ولا تتجاوز بها 100%</div>
+            </div>
+            <div class="text-center">
+              <div class="text-3xl font-black" style="color:${summaryColor};">${totalBonus.toFixed(2)}%</div>
+              <div class="text-xs" style="color:#EFDFB1;">من كل 1.00 = ${bn.bonusPts} نقطة</div>
+            </div>
+            <div class="text-center">
+              <div class="text-xs text-gray-400 mb-1">النتيجة مع الدرجة الإضافية</div>
+              <div class="text-2xl font-black" style="color:${pColor(bn.finalScore)};">${bn.finalScore}%</div>
+              <div class="text-xs" style="color:#9CA3AF;">(الأساس: ${bn.base}% + ${bn.effective} نقطة)</div>
+            </div>
+          </div>
+        </div>`;
+      })()}
+
+      <!-- Criteria Grid -->
+      <h3 class="text-lg font-black text-gray-700 mb-4">📊 التقييم الذاتي — المؤشرات</h3>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">${criteriaHTML}</div>
+
+      <!-- الاحتياطي النظامي -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mt-5 gold-card">
+        <h3 class="font-black mb-1" style="color:#303034;">🏦 الاحتياطي النظامي — السلامة المالية</h3>
+        <p class="text-xs text-gray-500 mb-4">مبلغ اختياري يُقتطع من الفوائض ويُدرج ضمن حقوق الملكية — لا يتجاوز متوسط المصروفات الإدارية لآخر 3 سنوات، ويُتاح توظيف 75% منه.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+          ${[
+            ['الإيرادات غير المقيدة (ريال)','unrestrictedRev'],
+            ['المصروفات غير المقيدة (ريال)','unrestrictedExp'],
+            ['المصاريف الإدارية س1 (ريال)','adminExp1'],
+            ['المصاريف الإدارية س2 (ريال)','adminExp2'],
+            ['المصاريف الإدارية س3 (ريال)','adminExp3'],
+          ].map(([lbl,fld])=>`
+            <div>
+              <label class="block text-xs font-bold text-gray-600 mb-1">${lbl}</label>
+              <input type="number" min="0" value="${(a.reserveFund||{})[fld]||''}" placeholder="0"
+                onchange="saveReserveFund('${id}','${fld}',this.value)"
+                class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-mo">
+            </div>`).join('')}
+        </div>
+        <div id="rf-result"></div>
+      </div>
+    </div>`;
+  if (Object.values(a.reserveFund||{}).some(v=>v)) updateReserveFundUI(id);
+}
+
+// ══════════════════════════════════════════════
+//  INDICATOR ASSESSMENT VIEW
+// ══════════════════════════════════════════════
+function viewIndicator(assocId, cKey, indId) {
+  S.view='indicator'; S.assocId=assocId; S.cKey=cKey; S.indId=indId;
+  const data=load(); const a=data.associations.find(x=>x.id===assocId); if(!a){goHome();return;}
+  const ind=IND[indId]; if(!ind){viewAssoc(assocId);return;}
+  setH(`${a.name} ← ${ind.name}`);
+
+  if(!a.assessment[cKey]) a.assessment[cKey]={};
+  if(!a.assessment[cKey][indId]) a.assessment[cKey][indId]={};
+  const ans = a.assessment[cKey][indId];
+  const sc = scoreIndicator(a,cKey,indId);
+  const meta = CRITERIA_META[cKey];
+  const lnKey = `${cKey}_${indId}`;
+  const ln = a.legalNotes?.[lnKey] || '';
+
+  // ── سؤال انطباقية الفروع ──
+  const appToggle = ind.applicabilityToggle;
+  const applicable = ans['__applicable__'] || '';        // '' | 'yes' | 'no'
+  const notAppl = applicable === 'no';
+
+  function _appBtn(val, label, icon) {
+    const isSel = applicable === val;
+    const selStyle = isSel ? 'border-[#BE9F3F] bg-[#EFDFB1] text-[#303034] shadow-md' : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100';
+    return `<button onclick="saveApplicability('${assocId}','${cKey}','${indId}','${val}')"
+      class="flex-1 flex flex-col items-center gap-1 py-3 rounded-xl border-2 font-bold text-sm transition-all ${selStyle}"
+      style="${isSel?'box-shadow:0 0 0 3px #BE9F3F55;':''}">
+      <span class="text-xl">${icon}</span><span>${label}</span>
+    </button>`;
+  }
+
+  const toggleHtml = appToggle ? `
+    <div class="bg-white rounded-2xl border-2 border-mo/30 p-5 mb-4 shadow-sm">
+      <p class="font-black text-gray-800 mb-3">هل تمتلك الجمعية فروعاً أو مكاتب؟</p>
+      <div class="flex gap-3">
+        ${_appBtn('yes','نعم، تمتلك فروعاً','🏢')}
+        ${_appBtn('no','لا، لا تمتلك فروعاً','🚫')}
+      </div>
+      ${notAppl ? `<div class="mt-3 bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-500 text-center">
+        ✅ هذا القسم غير منطبق على الجمعية ولن يُحتسب في الدرجة الكلية
+      </div>` : ''}
+    </div>` : '';
+
+  const pracHtml = (appToggle && notAppl) ? '' : ind.practices.map((p,i) => {
+    const cur = ans[p.id] || '';
+    const LABELS = {نعم:'متوفر', جزئي:'قيد الإعداد', لا:'غير متوفر'};
+    const ICONS  = {نعم:'✅', جزئي:'⚡', لا:'❌'};
+    const opts = ['نعم','جزئي','لا'].map(opt => {
+      const isSel = cur === opt;
+      const selCls = isSel
+        ? 'border-[#BE9F3F] bg-[#EFDFB1] text-[#303034] shadow-md scale-105'
+        : 'border-gray-200 bg-gray-50 text-gray-400 hover:border-gray-300 hover:bg-gray-100';
+      return `<label class="flex-1 flex flex-col items-center gap-1 p-2 rounded-xl border-2 cursor-pointer transition-all duration-150 ${selCls}" style="${isSel?'box-shadow:0 0 0 3px #BE9F3F55;':''}">
+        <input type="radio" name="prac_${indId}_${p.id}" value="${opt}" ${isSel?'checked':''}
+               onchange="_selectAnswer(this,'${assocId}','${cKey}','${indId}','${p.id}')" class="sr-only">
+        <span class="text-lg">${ICONS[opt]}</span>
+        <span class="text-xs font-bold">${LABELS[opt]}</span>
+        <span class="text-xs opacity-60">${opt==='نعم'?'100%':'0%'}</span>
+      </label>`;
+    }).join('');
+
+    const pts = cur==='نعم'?p.w : 0;
+    return `
+    <div class="bg-white rounded-2xl border border-gray-100 p-4 mb-3 shadow-sm">
+      <div class="flex items-start justify-between gap-3 mb-3">
+        <div class="flex items-start gap-3">
+          <span class="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-sm font-black" style="background:#EFDFB1;color:#303034;">${i+1}</span>
+          <p class="text-sm font-medium text-gray-700 leading-relaxed">${p.text}</p>
+        </div>
+        <div class="flex-shrink-0 text-xs text-gray-400 text-center">
+          <div class="font-bold text-gray-600">${pts}/${p.w}</div>
+          <div>درجة</div>
+        </div>
+      </div>
+      <div class="flex gap-2">${opts}</div>
+      <!-- قسم المستندات الداعمة -->
+      <div class="mt-3 pt-3 border-t border-gray-100">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-xs font-bold text-gray-500">📎 المستندات الداعمة</span>
+          <label class="cursor-pointer text-xs font-bold px-2.5 py-1 rounded-lg transition hover:opacity-80" style="background:#EFDFB1;color:#303034;">
+            + رفع ملف
+            <input type="file" class="hidden" accept=".pdf,.png,.jpg,.jpeg"
+                   onchange="handleFileUpload(event,'${assocId}','${cKey}','${indId}','${p.id}')">
+          </label>
+        </div>
+        <div id="flist_${assocId}_${cKey}_${indId}_${p.id}">${renderFilesHTML(assocId,cKey,indId,p.id)}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const ringHtml = notAppl
+    ? `<div class="text-center"><span class="text-xs font-bold px-3 py-1.5 rounded-full" style="background:#E5E7EB;color:#6B7280;">غير منطبق</span></div>`
+    : pRing(sc.pct,70,7);
+
+  document.getElementById('app').innerHTML = `
+    <div class="fade-in">
+      <button onclick="viewAssoc('${assocId}')" class="flex items-center gap-2 font-bold mb-4 transition text-sm no-print" style="color:#BE9F3F;">
+        ← العودة لملف ${a.name}
+      </button>
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-5">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-xl">${meta.icon}</span>
+              <span class="text-xs font-bold text-gray-400">${meta.label}</span>
+            </div>
+            <h2 class="text-xl font-black text-mgl">${ind.name}</h2>
+            <p class="text-sm text-gray-500 mt-1">${notAppl ? 'غير منطبق على هذه الجمعية' : ind.practices.length+' ممارسات — متوفر / غير متوفر'}</p>
+          </div>
+          <div id="ind-ring">${ringHtml}</div>
+        </div>
+        ${notAppl ? '' : `
+        <div class="mt-3 bg-gray-100 rounded-full h-2">
+          <div id="ind-bar" class="h-2 rounded-full transition-all" style="width:${sc.pct}%;background:${pColor(sc.pct)}"></div>
+        </div>
+        <div class="mt-2 flex items-center gap-3 text-xs text-gray-500">
+          <span id="ind-score">${sc.achieved}/${sc.total} درجة</span>
+          <span>|</span>
+          <span>كل درجة = إجابة ✅ متوفر بالكامل فقط</span>
+        </div>`}
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div class="lg:col-span-2 space-y-0">${toggleHtml}${pracHtml}</div>
+        <div>
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sticky top-20">
+            <h3 class="font-black text-gray-800 mb-3">⚖️ ملاحظات قانونية</h3>
+            <p class="text-xs text-gray-400 mb-2">ملاحظات فريق مصون الداخلية لهذا المؤشر</p>
+            <textarea id="leg-notes" rows="7" placeholder="أضف ملاحظات قانونية، مخاطر، أو توصيات..."
+              onchange="saveLegalNote('${assocId}','${lnKey}',this.value)"
+              class="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-mo">${ln}</textarea>
+            <div class="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
+              <div class="text-xs font-bold text-amber-800 mb-1">⚠️ تنبيه قانوني</div>
+              <div class="text-xs text-amber-700">نتائج التقييم الذاتي تخضع للمراجعة النهائية من المركز الوطني لتنمية القطاع غير الربحي.</div>
+            </div>
+            <div class="mt-3 rounded-xl p-3" style="background:#EFDFB1;">
+              <div class="text-xs font-bold mb-1" style="color:#303034;">المرجع النظامي</div>
+              <div class="text-xs" style="color:#414142;">دليل التقييم الذاتي — الإصدار الأول، مايو 2026م — المركز الوطني لتنمية القطاع غير الربحي</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════
+//  ACTIONS
+// ══════════════════════════════════════════════
+function saveApplicability(assocId, cKey, indId, value) {
+  const data = load();
+  const a = data.associations.find(x => x.id === assocId); if (!a) return;
+  if (!a.assessment[cKey]) a.assessment[cKey] = {};
+  if (!a.assessment[cKey][indId]) a.assessment[cKey][indId] = {};
+  a.assessment[cKey][indId]['__applicable__'] = value;
+  save(data);
+  _supaUpsertAnswer(assocId, cKey, indId, '__applicable__', value).catch(() => {});
+  viewIndicator(assocId, cKey, indId);
+}
+function _selectAnswer(radio, assocId, cKey, indId, pracId) {
+  const value = radio.value;
+  // تحديث بصري فوري لكل labels في المجموعة
+  const labels = radio.closest('div').querySelectorAll('label');
+  labels.forEach(lbl => {
+    const inp = lbl.querySelector('input');
+    const isSel = inp && inp.value === value;
+    lbl.className = lbl.className.replace(
+      /border-\[#BE9F3F\] bg-\[#EFDFB1\] text-\[#303034\] shadow-md scale-105|border-gray-200 bg-gray-50 text-gray-400 hover:border-gray-300 hover:bg-gray-100/g,
+      isSel
+        ? 'border-[#BE9F3F] bg-[#EFDFB1] text-[#303034] shadow-md scale-105'
+        : 'border-gray-200 bg-gray-50 text-gray-400 hover:border-gray-300 hover:bg-gray-100'
+    );
+    lbl.style.boxShadow = isSel ? '0 0 0 3px #BE9F3F55' : '';
+  });
+  saveAnswer(assocId, cKey, indId, pracId, value);
+}
+function saveAnswer(assocId, cKey, indId, pracId, value) {
+  const data=load(); const a=data.associations.find(x=>x.id===assocId); if(!a)return;
+  if(!a.assessment[cKey]) a.assessment[cKey]={};
+  if(!a.assessment[cKey][indId]) a.assessment[cKey][indId]={};
+  a.assessment[cKey][indId][pracId] = value === 'لا' ? '' : value;
+  save(data);
+  if (value === 'لا') {
+    SUPA.from('assessments').delete()
+      .eq('association_id', assocId).eq('standard', cKey)
+      .eq('indicator', indId).eq('practice_id', pracId).catch(()=>{});
+  } else {
+    _supaUpsertAnswer(assocId, cKey, indId, pracId, value).catch(()=>{});
+  }
+  // Update score display
+  const sc=scoreIndicator(a,cKey,indId);
+  const ring=document.getElementById('ind-ring'); if(ring) ring.innerHTML=pRing(sc.pct,70,7);
+  const bar=document.getElementById('ind-bar'); if(bar){bar.style.width=sc.pct+'%';bar.style.background=pColor(sc.pct);}
+  const score=document.getElementById('ind-score'); if(score) score.textContent=`${sc.achieved}/${sc.total} درجة`;
+}
+function saveLegalNote(assocId, key, value) {
+  const data=load(); const a=data.associations.find(x=>x.id===assocId); if(!a)return;
+  if(!a.legalNotes) a.legalNotes={};
+  a.legalNotes[key]=value; save(data);
+  _supaUpsertNote(assocId, key, value).catch(()=>{});
+}
+function updateStatus(assocId, newStatus) {
+  const data=load(); const a=data.associations.find(x=>x.id===assocId);
+  if(a){a.status=newStatus;save(data); _supaUpsertAssoc(assocId).catch(()=>{});}
+}
+function openAddModal() {
+  document.getElementById('add-modal').classList.remove('hidden');
+  ['inp-name','inp-reg','inp-lawyer'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('inp-sector').value='';
+  document.getElementById('inp-revenue').value='';
+  document.getElementById('inp-year').value='2025';
+  document.getElementById('inp-location-city').value='الرياض';
+  document.getElementById('inp-location-custom').value='';
+  document.getElementById('inp-location-custom').classList.add('hidden');
+  document.getElementById('cls-preview').innerHTML='<span class="text-gray-400">أدخل الإيرادات لرؤية التصنيف</span>';
+  setTimeout(()=>document.getElementById('inp-name').focus(),100);
+}
+function closeModal() { document.getElementById('add-modal').classList.add('hidden'); }
+function addAssoc() {
+  const name=document.getElementById('inp-name').value.trim();
+  const revenue=document.getElementById('inp-revenue').value;
+  if(!name){alert('يرجى إدخال اسم الجمعية');return;}
+  if(!revenue||Number(revenue)<0){alert('يرجى إدخال الإيرادات السنوية');return;}
+  const data=load();
+  const newId = 'a_'+Date.now();
+  data.associations.push(initAssocData(newId, name,
+    document.getElementById('inp-reg').value.trim(),
+    document.getElementById('inp-sector').value,
+    revenue,
+    document.getElementById('inp-lawyer').value.trim(),
+    document.getElementById('inp-year').value||'2025',
+    (()=>{ const s=document.getElementById('inp-location-city'); return s.value==='__custom__'?(document.getElementById('inp-location-custom').value.trim()||'أخرى'):s.value; })()));
+  save(data); _supaUpsertAssoc(newId).catch(()=>{});
+  closeModal(); renderDashboard();
+}
+function onModalLocChange() {
+  const s = document.getElementById('inp-location-city');
+  const c = document.getElementById('inp-location-custom');
+  if (s.value === '__custom__') { c.classList.remove('hidden'); c.focus(); }
+  else c.classList.add('hidden');
+}
+function saveLocation(assocId, cityName) {
+  if (!cityName || !cityName.trim()) return;
+  const d = load(); const a = d.associations.find(x=>x.id===assocId);
+  if (a) { a.locationCity = cityName.trim(); a.location = getCityTier(cityName.trim()); save(d); _supaUpsertAssoc(assocId).catch(()=>{}); viewAssoc(assocId); }
+}
+function onViewLocChange(assocId) {
+  const s = document.getElementById('loc-sel-'+assocId);
+  const c = document.getElementById('loc-custom-'+assocId);
+  if (s.value === '__custom__') { c.classList.remove('hidden'); c.focus(); }
+  else { c.classList.add('hidden'); saveLocation(assocId, s.value); }
+}
+function delAssoc(id) { S.delId=id; document.getElementById('del-modal').classList.remove('hidden'); }
+function confirmDel() {
+  const id = S.delId;
+  const data=load(); data.associations=data.associations.filter(a=>a.id!==id);
+  save(data);
+  // حذف من Supabase (ON DELETE CASCADE يزيل التقييمات والمستندات تلقائياً)
+  SUPA.from('associations').delete().eq('id', id).catch(e => console.warn('[assoc delete]', e));
+  document.getElementById('del-modal').classList.add('hidden'); goHome();
+}
+
+// ══════════════════════════════════════════════
+//  PRINT REPORT
+// ══════════════════════════════════════════════
+function printReport(assocId) {
+  const data=load(); const a=data.associations.find(x=>x.id===assocId); if(!a)return;
+  const ov=scoreOverall(a);
+  const today=new Date().toLocaleDateString('ar-SA',{year:'numeric',month:'long',day:'numeric'});
+  const cls=CLS[a.classification]||CLS.small;
+  const rev=a.revenue?Number(a.revenue).toLocaleString('ar-SA'):'—';
+
+  // Build criteria details
+  const criteriaHTML = ['compliance','transparency','financial'].map(cKey=>{
+    const meta=CRITERIA_META[cKey]; const sc=scoreCriteria(a,cKey);
+    const inds=getIndicators(a)[cKey];
+    const indsHTML = inds.map(indId=>{
+      const ind=IND[indId]; if(!ind)return'';
+      const s=scoreIndicator(a,cKey,indId);
+      const ans=a.assessment?.[cKey]?.[indId]||{};
+      const pracRows=ind.practices.map(p=>{
+        const v=ans[p.id]||'لم يُجَب';
+        const pts=v==='نعم'?p.w:0;
+        const icon=v==='نعم'?'✅':v==='جزئي'?'⚡':'❌';
+        return `<tr style="border-bottom:1px solid #f0f0f0">
+          <td style="padding:5px 8px;font-size:12px;color:#374151">${p.text}</td>
+          <td style="padding:5px 8px;text-align:center;font-size:12px">${icon} ${v}</td>
+          <td style="padding:5px 8px;text-align:center;font-size:12px;font-weight:700;color:${pts>=p.w?'#10B981':pts>0?'#F59E0B':'#EF4444'}">${pts}/${p.w}</td>
+        </tr>`;
+      }).join('');
+      const lnKey=`${cKey}_${indId}`;
+      const ln=a.legalNotes?.[lnKey]||'';
+      const flag=s.pct<70?`<span style="color:#EF4444;font-size:11px;font-weight:700"> ⚠️ أقل من 70%</span>`:'';
+      return `<div style="margin-bottom:14px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
+        <div style="background:#f9fafb;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb">
+          <div style="font-weight:700;font-size:13px;color:#303034">${ind.name}${flag}</div>
+          <div style="font-size:12px;font-weight:700;color:${pColor(s.pct)}">${s.achieved}/${s.total} — ${s.pct}%</div>
+        </div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:#f3f4f6">
+            <th style="padding:5px 8px;text-align:right;font-size:11px;color:#6B7280;font-weight:600">الممارسة</th>
+            <th style="padding:5px 8px;text-align:center;font-size:11px;color:#6B7280;font-weight:600;width:100px">الإجابة</th>
+            <th style="padding:5px 8px;text-align:center;font-size:11px;color:#6B7280;font-weight:600;width:80px">الدرجة</th>
+          </tr></thead>
+          <tbody>${pracRows}</tbody>
+        </table>
+        ${ln?`<div style="padding:7px 12px;background:#fef9f0;border-top:1px solid #fde68a;font-size:11px;color:#92400E"><strong>ملاحظات قانونية:</strong> ${ln}</div>`:''}
+      </div>`;
+    }).join('');
+
+    // Low scoring indicators
+    const lowInds = inds.filter(id=>scoreIndicator(a,cKey,id).pct<70);
+    const recHTML = lowInds.length ? `
+      <div style="margin-top:8px;padding:10px 12px;background:#EFDFB1;border-radius:8px;border:1px solid #BE9F3F">
+        <div style="font-size:12px;font-weight:700;color:#303034;margin-bottom:6px">⚠️ مؤشرات تحتاج تحسيناً (أقل من 70%):</div>
+        ${lowInds.map(id=>`<div style="font-size:11px;color:#414142;padding:2px 0">• ${IND[id]?.name||id}: ${scoreIndicator(a,cKey,id).pct}%</div>`).join('')}
+      </div>` : '';
+
+    const bgMap={compliance:'#EFF6FF',transparency:'#FFFBEB',financial:'#F0FDF4'};
+    const bMap={compliance:'#BFDBFE',transparency:'#FDE68A',financial:'#BBF7D0'};
+    return `<div style="margin-bottom:24px">
+      <div style="background:#303034;color:white;padding:10px 14px;border-radius:10px 10px 0 0;display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:800;font-size:15px">${meta.icon} ${meta.label}</div>
+        <div style="font-size:13px;background:rgba(255,255,255,0.2);padding:3px 10px;border-radius:20px">${sc.achieved.toFixed(1)}/${sc.total} — ${sc.pct}%</div>
+      </div>
+      <div style="border:1px solid #303034;border-top:none;border-radius:0 0 10px 10px;padding:14px">
+        ${recHTML}
+        <div style="margin-top:${recHTML?'12px':'0'}">${indsHTML}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Action plan: collect all indicators below 70% sorted by score
+  const allLow = [];
+  for (const cKey of ['compliance','transparency','financial']) {
+    for (const indId of getIndicators(a)[cKey]) {
+      const s=scoreIndicator(a,cKey,indId);
+      if(s.pct<70) allLow.push({name:IND[indId]?.name||indId, criteria:CRITERIA_META[cKey].label, pct:s.pct});
+    }
+  }
+  allLow.sort((x,y)=>x.pct-y.pct);
+  const actionHTML = allLow.length ? `
+    <div style="background:#EFDFB1;border:1px solid #BE9F3F;border-radius:10px;padding:14px;margin-bottom:20px">
+      <div style="font-weight:800;font-size:15px;color:#303034;margin-bottom:10px">📌 خطة العمل المقترحة (مرتبة بالأولوية)</div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr style="background:#303034">
+          <th style="padding:6px 8px;text-align:right;font-size:11px;font-weight:700;color:#BE9F3F">الأولوية</th>
+          <th style="padding:6px 8px;text-align:right;font-size:11px;font-weight:700;color:#BE9F3F">المؤشر</th>
+          <th style="padding:6px 8px;text-align:right;font-size:11px;font-weight:700;color:#BE9F3F">المعيار</th>
+          <th style="padding:6px 8px;text-align:center;font-size:11px;font-weight:700;color:#BE9F3F">النسبة الحالية</th>
+        </tr></thead>
+        <tbody>${allLow.map((x,i)=>`<tr style="border-bottom:1px solid #BE9F3F33">
+          <td style="padding:6px 8px;font-size:12px;font-weight:700;color:#303034">#${i+1}</td>
+          <td style="padding:6px 8px;font-size:12px;color:#374151">${x.name}</td>
+          <td style="padding:6px 8px;font-size:12px;color:#6B7280">${x.criteria}</td>
+          <td style="padding:6px 8px;font-size:12px;font-weight:700;color:#EF4444;text-align:center">${x.pct}%</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>` : `<div style="background:#EFDFB1;border:1px solid #BE9F3F;border-radius:10px;padding:12px;margin-bottom:20px;color:#303034;font-size:13px;font-weight:700">✅ جميع المؤشرات تتجاوز نسبة 70% — أداء ممتاز!</div>`;
+
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
+  <title>تقرير حوكمة — ${a.name}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+  <style>*{font-family:'Tajawal',sans-serif;margin:0;padding:0;box-sizing:border-box;direction:rtl;}
+  body{background:white;color:#1f2937;font-size:14px;}
+  @media print{body{margin:0;}@page{margin:15mm;}}</style>
+  </head><body>
+  <div style="max-width:800px;margin:0 auto;padding:20px">
+    <div style="background:#303034;border-radius:14px;padding:22px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="color:#BE9F3F;font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:3px">منصة مصون للحوكمة والامتثال — مصون محامون ومستشارون</div>
+        <div style="color:white;font-size:20px;font-weight:800">تقرير التقييم الذاتي للحوكمة</div>
+        <div style="color:#9CA3AF;font-size:12px;margin-top:3px">${a.name}</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:34px;font-weight:900;color:${pColor(ov)}">${ov}%</div>
+        <div style="color:#9CA3AF;font-size:11px">النسبة الإجمالية</div>
+      </div>
+    </div>
+
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div><div style="font-size:11px;color:#9CA3AF">اسم الجمعية</div><div style="font-weight:700;color:#303034;margin-top:2px">${a.name}</div></div>
+      <div><div style="font-size:11px;color:#9CA3AF">رقم الترخيص</div><div style="font-weight:700;color:#303034;margin-top:2px">${a.reg||'—'}</div></div>
+      <div><div style="font-size:11px;color:#9CA3AF">تاريخ التقرير</div><div style="font-weight:700;color:#303034;margin-top:2px">${today}</div></div>
+      <div><div style="font-size:11px;color:#9CA3AF">التصنيف</div><div style="font-weight:700;color:#303034;margin-top:2px">${cls.label}</div></div>
+      <div><div style="font-size:11px;color:#9CA3AF">الإيرادات</div><div style="font-weight:700;color:#303034;margin-top:2px">${rev} ريال</div></div>
+      <div><div style="font-size:11px;color:#9CA3AF">المحامي المسؤول</div><div style="font-weight:700;color:#303034;margin-top:2px">${a.lawyer||'—'}</div></div>
+    </div>
+
+    <div style="margin-bottom:18px">
+      <div style="font-weight:800;font-size:15px;color:#303034;margin-bottom:10px">ملخص النتائج</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        ${['compliance','transparency','financial'].map(k=>{const sc=scoreCriteria(a,k);const m=CRITERIA_META[k];return `
+          <div style="border:2px solid ${pColor(sc.pct)};border-radius:10px;padding:12px;text-align:center">
+            <div style="font-size:20px;margin-bottom:4px">${m.icon}</div>
+            <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:3px">${m.label}</div>
+            <div style="font-size:24px;font-weight:900;color:${pColor(sc.pct)}">${sc.pct}%</div>
+            <div style="font-size:11px;color:#9CA3AF">${sc.achieved.toFixed(1)}/${sc.total} درجة</div>
+          </div>`;}).join('')}
+      </div>
+    </div>
+
+    ${actionHTML}
+
+    ${(()=>{
+      const bn = calcBonus(a);
+      const totalBonus = (bn.academic?0.12:0)+(bn.kinship?0.12:0);
+      const minReqLoc = getCityLabel(a) || '—';
+      return `
+    <div style="background:#EFDFB1;border:1px solid #BE9F3F;border-radius:10px;padding:14px;margin-bottom:20px">
+      <div style="font-weight:800;font-size:15px;color:#303034;margin-bottom:10px">🌟 الدرجات الإضافية — الدليل الاسترشادي، مايو 2026م</div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:10px">
+        <thead><tr style="background:#303034">
+          <th style="padding:6px 8px;text-align:right;font-size:11px;font-weight:700;color:#BE9F3F;">المحفز</th>
+          <th style="padding:6px 8px;text-align:right;font-size:11px;font-weight:700;color:#BE9F3F;">الشرط</th>
+          <th style="padding:6px 8px;text-align:center;font-size:11px;font-weight:700;color:#BE9F3F;">الحالة</th>
+          <th style="padding:6px 8px;text-align:center;font-size:11px;font-weight:700;color:#BE9F3F;">الدرجة</th>
+        </tr></thead>
+        <tbody>
+          <tr style="border-bottom:1px solid #BE9F3F33;">
+            <td style="padding:6px 8px;font-size:12px;font-weight:700;color:#303034;">🎓 الكفاءة العلمية</td>
+            <td style="padding:6px 8px;font-size:11px;color:#414142;">≥50% بكالوريوس | ≥${bn.minReq} عضو (${minReqLoc})<br>الحالي: ${bn.memberCount||'—'} عضو، نسبة البكالوريوس: ${bn.memberCount>0?bn.bachelorPct+'%':'—'}</td>
+            <td style="padding:6px 8px;text-align:center;font-size:12px;font-weight:700;color:${bn.academic?'#16A34A':'#DC2626'}">${bn.academic?'✅ محقق':'❌ غير محقق'}</td>
+            <td style="padding:6px 8px;text-align:center;font-size:13px;font-weight:900;color:${bn.academic?'#BE9F3F':'#9CA3AF'}">${bn.academic?'+0.12%':'—'}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 8px;font-size:12px;font-weight:700;color:#303034;">📝 إفصاح القرابة</td>
+            <td style="padding:6px 8px;font-size:11px;color:#414142;">نماذج إفصاح مكتملة لجميع الأعضاء<br>الحالة: ${a.kinshipForms||'لم يُحدَّد'}</td>
+            <td style="padding:6px 8px;text-align:center;font-size:12px;font-weight:700;color:${bn.kinship?'#16A34A':'#DC2626'}">${bn.kinship?'✅ محقق':'❌ غير محقق'}</td>
+            <td style="padding:6px 8px;text-align:center;font-size:13px;font-weight:900;color:${bn.kinship?'#BE9F3F':'#9CA3AF'}">${bn.kinship?'+0.12%':'—'}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="display:flex;justify-content:space-between;align-items:center;background:#303034;border-radius:8px;padding:10px 14px;">
+        <div>
+          <div style="color:white;font-weight:700;font-size:13px;">إجمالي الدرجات الإضافية المحققة: <span style="color:#BE9F3F;font-size:16px;">${totalBonus.toFixed(2)}%</span></div>
+          <div style="color:#9CA3AF;font-size:11px;margin-top:2px;">النتيجة الأساسية: ${bn.base}% ← النتيجة النهائية: ${bn.finalScore}%</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:28px;font-weight:900;color:${pColor(bn.finalScore)}">${bn.finalScore}%</div>
+          <div style="color:#9CA3AF;font-size:10px;">النتيجة مع الدرجات الإضافية</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;padding:8px 12px;background:white;border-radius:6px;border-right:3px solid #BE9F3F;font-size:11px;color:#414142;">
+        <strong style="color:#303034;">توصية مصون:</strong> يوصي فريق مصون محامون ومستشارون باستيفاء متطلبات المحفزين الإضافيين لضمان أعلى درجة ممكنة في تقييم الحوكمة وتعظيم النتيجة النهائية أمام المركز الوطني لتنمية القطاع غير الربحي.
+      </div>
+    </div>`;
+    })()}
+
+    ${criteriaHTML}
+
+    <div style="border-top:2px solid #e5e7eb;margin-top:28px;padding-top:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:16px">
+        <div style="border:1px solid #e5e7eb;border-radius:8px;padding:14px">
+          <div style="font-size:11px;color:#9CA3AF;margin-bottom:8px">توقيع المسؤول القانوني</div>
+          <div style="height:40px;border-bottom:1px solid #e5e7eb;margin-bottom:4px"></div>
+          <div style="font-size:11px;color:#9CA3AF">${a.lawyer||'                    '}</div>
+        </div>
+        <div style="border:1px solid #e5e7eb;border-radius:8px;padding:14px">
+          <div style="font-size:11px;color:#9CA3AF;margin-bottom:8px">ختم مصون</div>
+          <div style="height:40px;border:2px solid #BE9F3F;border-radius:8px;background:#EFDFB1;display:flex;align-items:center;justify-content:center">
+            <span style="color:#303034;font-size:12px;font-weight:700">مصون محامون ومستشارون</span>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center;font-size:11px;color:#9CA3AF">
+        تم التقييم وفق دليل الجمعيات ${cls.label} — الإصدار الأول، سنة التقييم ${a.year||'2025'}م، الصادر من المركز الوطني لتنمية القطاع غير الربحي
+      </div>
+      <div style="text-align:center;font-size:10px;color:#D1D5DB;margin-top:4px">
+        هذا التقرير مسودة للمراجعة القانونية الداخلية ولا يُعدّ رأياً قانونياً نهائياً
+      </div>
+    </div>
+  </div>
+  <script>window.onload=()=>window.print()<\/script></body></html>`);
+  win.document.close();
+}
+
+// ══════════════════════════════════════════════
+//  KEYBOARD
+// ══════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key==='Enter' && !document.getElementById('add-modal').classList.contains('hidden')) addAssoc();
+  if (e.key==='Escape') {
+    closeModal();
+    document.getElementById('del-modal').classList.add('hidden');
+    document.getElementById('file-del-modal').classList.add('hidden');
+    _delFile = null;
+  }
+});
+
+// ══════════════════════════════════════════════
+//  ADMIN — إدارة المستخدمين (للمدير فقط)
+// ══════════════════════════════════════════════
+let _editUserId = null; // معرف المستخدم قيد التعديل
+
+async function renderAdminPage() {
+  if (currentUser?.role !== 'admin') return;
+  S.view = 'admin'; setH('إدارة المستخدمين');
+
+  const { data: users, error } = await SUPA.from('users')
+    .select('id,email,name,role,created_at').order('created_at');
+
+  const rows = (users || []).map(u => {
+    const roleBadge = u.role === 'admin'
+      ? `<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">👑 مدير</span>`
+      : `<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-300">⚖️ محامٍ</span>`;
+    const isSelf = u.id === currentUser.id;
+    return `
+    <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+      <td class="px-4 py-3">
+        <div class="font-bold text-gray-800 text-sm">${u.name}${isSelf ? ' <span class="text-xs text-gray-400">(أنت)</span>' : ''}</div>
+        <div class="text-xs text-gray-400 mt-0.5">${u.email}</div>
+      </td>
+      <td class="px-4 py-3">${roleBadge}</td>
+      <td class="px-4 py-3 text-xs text-gray-400">
+        ${u.created_at ? new Date(u.created_at).toLocaleDateString('ar-SA') : '—'}
+      </td>
+      <td class="px-4 py-3">
+        <div class="flex items-center gap-2">
+          <button onclick="openEditUserModal('${u.id}','${u.name.replace(/'/g,"\\'")}','${u.email}','${u.role}')"
+            class="px-2.5 py-1 rounded-lg text-xs font-bold transition hover:opacity-80"
+            style="background:#EFDFB1;color:#303034;">تعديل</button>
+          ${!isSelf ? `<button onclick="confirmDeleteUser('${u.id}','${u.name.replace(/'/g,"\\'")}')"
+            class="px-2.5 py-1 rounded-lg text-xs font-bold bg-red-50 text-red-600 hover:bg-red-100 transition">حذف</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('app').innerHTML = `
+  <div class="fade-in max-w-4xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-2xl font-black" style="color:#303034;">⚙️ إدارة المستخدمين</h2>
+        <p class="text-gray-400 text-sm mt-1">${(users||[]).length} مستخدم مسجّل في النظام</p>
+      </div>
+      <button onclick="openAddUserModal()"
+        class="px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg transition flex items-center gap-2"
+        style="background:#BE9F3F;color:#fff;">
+        + إضافة مستخدم
+      </button>
+    </div>
+
+    ${error ? `<div class="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 font-bold mb-4">❌ تعذّر تحميل المستخدمين: ${error.message}</div>` : ''}
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden gold-card">
+      <table class="w-full">
+        <thead>
+          <tr style="background:#303034;">
+            <th class="px-4 py-3 text-right text-xs font-bold" style="color:#BE9F3F;">المستخدم</th>
+            <th class="px-4 py-3 text-right text-xs font-bold" style="color:#BE9F3F;">الصلاحية</th>
+            <th class="px-4 py-3 text-right text-xs font-bold hidden md:table-cell" style="color:#BE9F3F;">تاريخ الإضافة</th>
+            <th class="px-4 py-3 text-right text-xs font-bold" style="color:#BE9F3F;">الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody>${rows || `<tr><td colspan="4" class="px-4 py-10 text-center text-gray-400">لا يوجد مستخدمون بعد</td></tr>`}</tbody>
+      </table>
+    </div>
+
+    <div class="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+      <strong>⚠️ ملاحظة أمنية:</strong> كلمات السر تُحفظ مشفرة بـ bcrypt — لا يمكن استرجاعها.
+      في حال نسيان كلمة السر يجب إعادة ضبطها من هنا.
+    </div>
+  </div>`;
+}
+
+// ── نافذة إضافة مستخدم ──
+function openAddUserModal() {
+  _editUserId = null;
+  document.getElementById('um-modal-title').textContent   = 'إضافة مستخدم جديد';
+  document.getElementById('um-save-btn').textContent      = 'إضافة المستخدم';
+  document.getElementById('um-name').value    = '';
+  document.getElementById('um-email').value   = '';
+  document.getElementById('um-role').value    = 'lawyer';
+  document.getElementById('um-pass').value    = '';
+  document.getElementById('um-pass-row').classList.remove('hidden');
+  document.getElementById('um-pass-label').textContent = 'كلمة السر *';
+  document.getElementById('um-error').classList.add('hidden');
+  document.getElementById('um-modal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('um-name').focus(), 100);
+}
+
+// ── نافذة تعديل مستخدم ──
+function openEditUserModal(id, name, email, role) {
+  _editUserId = id;
+  document.getElementById('um-modal-title').textContent   = 'تعديل بيانات المستخدم';
+  document.getElementById('um-save-btn').textContent      = 'حفظ التعديلات';
+  document.getElementById('um-name').value    = name;
+  document.getElementById('um-email').value   = email;
+  document.getElementById('um-role').value    = role;
+  document.getElementById('um-pass').value    = '';
+  document.getElementById('um-pass-row').classList.remove('hidden');
+  document.getElementById('um-pass-label').textContent = 'كلمة السر الجديدة (اتركها فارغة للإبقاء على القديمة)';
+  document.getElementById('um-error').classList.add('hidden');
+  document.getElementById('um-modal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('um-name').focus(), 100);
+}
+
+function closeUserModal() {
+  document.getElementById('um-modal').classList.add('hidden');
+  _editUserId = null;
+}
+
+// ── حفظ المستخدم (إضافة أو تعديل) ──
+async function saveUserModal() {
+  const name  = document.getElementById('um-name').value.trim();
+  const email = document.getElementById('um-email').value.trim().toLowerCase();
+  const role  = document.getElementById('um-role').value;
+  const pass  = document.getElementById('um-pass').value;
+  const errEl = document.getElementById('um-error');
+  const btn   = document.getElementById('um-save-btn');
+
+  errEl.classList.add('hidden');
+  if (!name)  { errEl.textContent = 'يرجى إدخال الاسم';              errEl.classList.remove('hidden'); return; }
+  if (!email) { errEl.textContent = 'يرجى إدخال البريد الإلكتروني'; errEl.classList.remove('hidden'); return; }
+  if (!_editUserId && !pass) { errEl.textContent = 'يرجى إدخال كلمة السر'; errEl.classList.remove('hidden'); return; }
+
+  btn.disabled = true; btn.textContent = '…جاري الحفظ';
+
+  try {
+    let hash = null;
+    if (pass) {
+      hash = await new Promise((res, rej) => bcrypt.hash(pass, 10, (e, h) => e ? rej(e) : res(h)));
+    }
+
+    if (_editUserId) {
+      // تعديل
+      const upd = { name, email, role };
+      if (hash) upd.password_hash = hash;
+      const { error } = await SUPA.from('users').update(upd).eq('id', _editUserId);
+      if (error) throw error;
+      // تحديث بيانات المستخدم الحالي في الجلسة لو عدّل نفسه
+      if (_editUserId === currentUser.id) {
+        currentUser.name = name; currentUser.role = role;
+        _setSession(currentUser);
+        showMainApp(currentUser);
+      }
+    } else {
+      // إضافة جديد
+      const { error } = await SUPA.from('users').insert({ name, email, role, password_hash: hash });
+      if (error) {
+        if (error.code === '23505') throw new Error('البريد الإلكتروني مسجّل مسبقاً');
+        throw error;
+      }
+    }
+
+    closeUserModal();
+    renderAdminPage();
+
+  } catch (e) {
+    errEl.textContent = e.message || 'حدث خطأ — حاول مرة أخرى';
+    errEl.classList.remove('hidden');
+  } finally {
+    btn.disabled = false; btn.textContent = _editUserId ? 'حفظ التعديلات' : 'إضافة المستخدم';
+  }
+}
+
+// ── حذف مستخدم ──
+let _delUserId = null;
+function confirmDeleteUser(id, name) {
+  _delUserId = id;
+  document.getElementById('ud-name').textContent = name;
+  document.getElementById('ud-modal').classList.remove('hidden');
+}
+async function doDeleteUser() {
+  if (!_delUserId) return;
+  const { error } = await SUPA.from('users').delete().eq('id', _delUserId);
+  document.getElementById('ud-modal').classList.add('hidden');
+  _delUserId = null;
+  if (error) { alert('تعذّر حذف المستخدم: ' + error.message); return; }
+  renderAdminPage();
+}
+
+// ══════════════════════════════════════════════
+//  INIT — فحص الجلسة عند فتح الصفحة
+// ══════════════════════════════════════════════
+(async () => {
+  const stored = _getStoredSession();
+  if (stored) {
+    currentUser = stored;
+    showMainApp(stored);
+    await initApp();
+  } else {
+    showLoginPage();
+  }
+})();
+</script>
+</body>
+</html>
