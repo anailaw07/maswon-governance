@@ -638,6 +638,89 @@ const CRITERIA_META = {
   transparency: { label:'الشفافية والإفصاح',    icon:'🔍', color:'amber' },
   financial:    { label:'السلامة المالية',       icon:'💰', color:'green' },
 };
+const REQUIRED_DOCS = {
+  c_laiha: [
+    { text: 'اللائحة الأساسية' },
+    { text: 'إجراءات تعديل اللائحة الأساسية', conditional: true, condNote: 'إن كان هناك تعديل', subItems: ['اجتماع الجمعية العمومية بالموافقة على تعديل اللائحة الأساسية', 'خطاب الرفع للمركز'] }
+  ],
+  c_jecm: [
+    { text: 'سجل اجتماعات الجمعية العمومية محدث' },
+    { text: 'سجل أعضاء الجمعية العمومية محدث' },
+    { text: 'محضر الجمعية العمومية لإبراء ذمة الأعضاء المستقيلين', conditional: true, condNote: 'إن كان هناك تغيير في المجلس' },
+    { text: 'محضر اجتماع الجمعية العمومية العادية 2026م', subItems: ['القوائم المالية للسنة المالية 2026م', 'التقرير السنوي للبرامج والأنشطة لسنة 2025م', 'الموازنة التقديرية لسنة 2026م', 'الخطة التشغيلية لسنة 2026م'] },
+    { text: 'إثبات رفع المحضر للمركز الوطني' },
+    { text: 'القوائم المالية للسنة المالية 2025م المعتمدة من الجمعية العمومية' },
+    { text: 'التقرير السنوي للبرامج والأنشطة لسنة 2025م المعتمد من الجمعية العمومية' },
+    { text: 'الموازنة التقديرية لسنة 2026م المعتمدة من الجمعية العمومية' },
+    { text: 'الخطة التشغيلية لسنة 2026م المعتمدة من الجمعية العمومية' },
+    { text: 'محضر اجتماع الجمعية العمومية غير العادية 2025م', conditional: true, condNote: 'إن وجد', subItems: ['نسخة من الدعوات للأعضاء', 'خطاب الرفع بالمحضر للمركز الوطني'] }
+  ],
+  c_majlis: [
+    { text: 'محاضر اجتماعات مجلس الإدارة 2025 (لا تقل عن أربع اجتماعات في كل ربع)' },
+    { text: 'بيان محدث بمناصب أعضاء المجلس ووظائفهم خارج الجمعية' },
+    { text: 'الهيكل التنظيمي للجمعية' },
+    { text: 'بيان محدث بأسماء ووظائف الموظفين في الجمعية' },
+    { text: 'موافقة المركز على عمل أحد أعضاء المجلس في الجمعية', conditional: true, condNote: 'إن وجد' },
+    { text: 'تقرير البرنامج التعريفي لمجلس الإدارة' }
+  ],
+  c_foroo: [
+    { text: 'بيان بالمكاتب والفروع للجمعية', conditional: true, condNote: 'إن وجدت' },
+    { text: 'موافقة المركز على إنشاء الفروع والمكاتب', conditional: true, condNote: 'إن وجدت' }
+  ],
+  c_taqarir: [
+    { text: 'عقد مراجع الحسابات الخارجي مع ترخيص المكتب' },
+    { text: 'القوائم المالية لعام 2025م المعتمدة من الجمعية العمومية' }
+  ],
+  c_baramij: [
+    { text: 'قائمة الفعاليات والأنشطة والخدمات المقدمة خارج المملكة', conditional: true, condNote: 'إن وجدت' },
+    { text: 'موافقة المركز على إقامة البرامج خارج المملكة', conditional: true, condNote: 'إن وجدت' }
+  ],
+  c_wathaeq: [
+    { text: 'صورة من حفظ سجلات المستفيدين' },
+    { text: 'نسخة من بطاقات العضوية لأعضاء الجمعية العمومية' },
+    { text: 'تقرير استلام جميع الأعضاء لبطاقات العضوية' }
+  ],
+  c_lijan: [
+    { text: 'قائمة باللجان التي تمت تكوينها', conditional: true, condNote: 'إن وجدت' },
+    { text: 'قرارات تكوين اللجان وأعضائها وتحديد اختصاصاتها', conditional: true, condNote: 'إن وجدت' }
+  ],
+  t_lawaeh: [
+    { text: 'موقع إلكتروني للجمعية محدث وفعال' },
+    { text: 'نشر اللائحة الأساسية على الموقع مع طمس هويات الأعضاء' }
+  ],
+  t_qaimoon: [
+    { text: 'أسماء أعضاء مجلس الإدارة ومدة دورة المجلس والمدة المتاحة للأعضاء' }
+  ],
+  t_qawaem: [
+    { text: 'نشر القوائم المالية المعتمدة من الجمعية العمومية' }
+  ],
+  t_efsah: [
+    { text: 'تعبئة نموذج الافصاح في الوقت المحدد' }
+  ],
+  f_siyasat: [
+    { text: 'لائحة السياسات المالية مع محضر الاعتماد من المجلس' },
+    { text: 'لائحة وإجراءات للمشتريات مع محضر الاعتماد من المجلس' }
+  ],
+  f_sajilat: [
+    { text: 'سجل العضوية وسجل المستفيدين' },
+    { text: 'دفتر اليومية وعينة من سندات القبض' }
+  ],
+  f_taqarir: [
+    { text: 'الموازنة التقديرية لعام 2025م' }
+  ]
+};
+function renderRequiredDocs(indId) {
+  const docs = REQUIRED_DOCS[indId];
+  if (!docs || !docs.length) return '';
+  const badge = (note) => `<span class="text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0" style="background:#FFF7ED;color:#EA580C;border:1px solid #FED7AA;">${note || 'إن وجد'}</span>`;
+  const items = docs.map((d,i) => {
+    const gray = d.conditional ? 'text-gray-400' : 'text-gray-700';
+    const grayS = d.conditional ? 'text-gray-400' : 'text-gray-500';
+    const sub = d.subItems ? `<ul class="mt-1.5 mr-5 space-y-1">${d.subItems.map(s=>`<li class="text-xs ${grayS} flex items-start gap-1.5"><span class="flex-shrink-0 mt-0.5 text-gray-300">◦</span><span>${s}</span></li>`).join('')}</ul>` : '';
+    return `<li class="flex items-start gap-2.5 py-2 border-b border-gray-50 last:border-0"><span class="flex-shrink-0 w-5 h-5 rounded-full text-xs font-black flex items-center justify-center mt-0.5" style="background:#EFDFB1;color:#303034;">${i+1}</span><div class="flex-1 min-w-0"><div class="flex items-start gap-2 flex-wrap"><span class="text-sm ${gray} leading-relaxed">${d.text}</span>${d.conditional?badge(d.condNote):''}</div>${sub}</div></li>`;
+  }).join('');
+  return `<div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm mt-4"><div class="flex items-center gap-2 mb-3"><span class="text-base">📋</span><h3 class="font-black text-gray-800">المستندات المطلوبة</h3></div><ul class="divide-y divide-gray-50">${items}</ul><div class="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2">${badge('إن وجد')}<span class="text-xs text-gray-400">مستند مشروط — مطلوب فقط عند الانطباق</span></div></div>`;
+}
 
 // ══════════════════════════════════════════════
 //  SUPABASE + CACHE LAYER
@@ -1758,7 +1841,7 @@ function viewIndicator(assocId, cKey, indId) {
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div class="lg:col-span-2 space-y-0">${toggleHtml}${pracHtml}</div>
+        <div class="lg:col-span-2 space-y-0">${toggleHtml}${pracHtml}${renderRequiredDocs(indId)}</div>
         <div>
           <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sticky top-20">
             <h3 class="font-black text-gray-800 mb-3">⚖️ ملاحظات قانونية</h3>
